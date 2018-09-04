@@ -69,7 +69,7 @@ classdef Net < handle
       self.blob_names = self.attributes.blob_names;
     end
     function delete (self)
-      if ~isempty(self.hNet_self)
+      if  self.isvalid||~isempty(self.hNet_self)
         caffe_('delete_net', self.hNet_self);
       end
     end

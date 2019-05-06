@@ -1,14 +1,15 @@
 #ifndef CAFFE_UTIL_DEVICE_ALTERNATE_H_
 #define CAFFE_UTIL_DEVICE_ALTERNATE_H_
 
+//如果仅仅使用CPU
 #ifdef CPU_ONLY  // CPU-only Caffe.
 
 #include <vector>
 
 // Stub out GPU calls as unavailable.
-
+//定义无GPU输出状况
 #define NO_GPU LOG(FATAL) << "Cannot use GPU in CPU-only Caffe: check mode."
-
+//定义设置使用GPU向前和向后计算的时候重载函数输出错误警告信息
 #define STUB_GPU(classname) \
 template <typename Dtype> \
 void classname<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom, \
@@ -17,7 +18,7 @@ template <typename Dtype> \
 void classname<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top, \
     const vector<bool>& propagate_down, \
     const vector<Blob<Dtype>*>& bottom) { NO_GPU; } \
-
+//更改重载类中函数作用
 #define STUB_GPU_FORWARD(classname, funcname) \
 template <typename Dtype> \
 void classname<Dtype>::funcname##_##gpu(const vector<Blob<Dtype>*>& bottom, \
@@ -43,7 +44,7 @@ void classname<Dtype>::funcname##_##gpu(const vector<Blob<Dtype>*>& top, \
 //
 // CUDA macros
 //
-
+//各种cuda确认函数
 // CUDA: various checks for different function calls.
 #define CUDA_CHECK(condition) \
   /* Code block avoids redefinition of cudaError_t error */ \
@@ -66,6 +67,8 @@ void classname<Dtype>::funcname##_##gpu(const vector<Blob<Dtype>*>& top, \
       << caffe::curandGetErrorString(status); \
   } while (0)
 
+//确定网格计算线程
+
 // CUDA: grid stride looping
 #define CUDA_KERNEL_LOOP(i, n) \
   for (int i = blockIdx.x * blockDim.x + threadIdx.x; \
@@ -78,13 +81,16 @@ void classname<Dtype>::funcname##_##gpu(const vector<Blob<Dtype>*>& top, \
 namespace caffe {
 
 // CUDA: library error reporting.
+//获取错误类型进行对象之间的转换
 const char* cublasGetErrorString(cublasStatus_t error);
 const char* curandGetErrorString(curandStatus_t error);
 
 // CUDA: use 512 threads per block
+//默认每个块中使用512个线程
 const int CAFFE_CUDA_NUM_THREADS = 512;
 
 // CUDA: number of blocks for threads.
+//当前线程所在块编号
 inline int CAFFE_GET_BLOCKS(const int N) {
   return (N + CAFFE_CUDA_NUM_THREADS - 1) / CAFFE_CUDA_NUM_THREADS;
 }
@@ -94,3 +100,8 @@ inline int CAFFE_GET_BLOCKS(const int N) {
 #endif  // CPU_ONLY
 
 #endif  // CAFFE_UTIL_DEVICE_ALTERNATE_H_
+/*
+wpc:
+此文件定义了对于CPU和GPU基本的类信息转换和线程操作
+包括错误信息的获取、所在计算单元的块位置
+*/

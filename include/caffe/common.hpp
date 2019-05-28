@@ -11,15 +11,16 @@
 #include <iostream>  // NOLINT(readability/streams)
 #include <map>
 #include <set>
-#include <sstream>
+#include <sstream> //字符流
 #include <string>
-#include <utility>  // pair
+#include <utility>  // pair 结构体链接两个函数
 #include <vector>
 
 //使用设备声明文件
 #include "caffe/util/device_alternate.hpp"
 
 // Convert macro to string
+//将宏指令转换为string
 #define STRINGIFY(m) #m
 #define AS_STRING(m) STRINGIFY(m) // #m
 
@@ -28,10 +29,12 @@
 // 2.1. If yes, we will add a temporary solution to redirect the namespace.
 // TODO(Yangqing): Once gflags solves the problem in a more elegant way, let's
 // remove the following hack.
-#ifndef GFLAGS_GFLAGS_H_
+//使用google flags
+#ifndef GFLAGS_GFLAGS_H_ 
 namespace gflags = google;
-#endif  // GFLAGS_GFLAGS_H_
-//重载函数 禁止类的拷贝和和拷贝初始化有操作
+#endif  
+// GFLAGS_GFLAGS_H_
+//重载类的拷贝函数，将其变为私有； 禁止类的拷贝和和拷贝初始化有操作;c++11建议更改为=delete
 // Disable the copy and assignment operator for a class.
 #define DISABLE_COPY_AND_ASSIGN(classname) \
 private:\
@@ -39,11 +42,12 @@ private:\
   classname& operator=(const classname&)
 //用double和float实例化一个类
 // Instantiate a class with float and double specifications.
+//预定义模板类，方便初始化
 #define INSTANTIATE_CLASS(classname) \
   char gInstantiationGuard##classname; \
   template class classname<float>; \
   template class classname<double>
-//网路向前计算
+//声明网路向前计算函数
 #define INSTANTIATE_LAYER_GPU_FORWARD(classname) \
   template void classname<float>::Forward_gpu( \
       const std::vector<Blob<float>*>& bottom, \
@@ -51,7 +55,7 @@ private:\
   template void classname<double>::Forward_gpu( \
       const std::vector<Blob<double>*>& bottom, \
       const std::vector<Blob<double>*>& top);
-//网络向后计算
+//申明网络向后计算
 #define INSTANTIATE_LAYER_GPU_BACKWARD(classname) \
   template void classname<float>::Backward_gpu( \
       const std::vector<Blob<float>*>& top, \
@@ -62,19 +66,23 @@ private:\
       const std::vector<bool>& propagate_down, \
       const std::vector<Blob<double>*>& bottom)
 
+//使用预定义，方便声明类的向前和向后计算，主要还是为了预定义，减少代码使用
 #define INSTANTIATE_LAYER_GPU_FUNCS(classname) \
   INSTANTIATE_LAYER_GPU_FORWARD(classname); \
   INSTANTIATE_LAYER_GPU_BACKWARD(classname)
 
 // A simple macro to mark codes that are not implemented, so that when the code
 // is executed we will see a fatal log.
+//简单的声明宏指令
 #define NOT_IMPLEMENTED LOG(FATAL) << "Not Implemented Yet"
 
 // See PR #1236
+//声明Mat类
 namespace cv { class Mat; }
 
 namespace caffe {
-//使用外部库
+//使用boost share_ptr 因为cuda不支持C++11
+//ps cuda 10早就支持c++11和C++14了
 // We will use the boost shared_ptr instead of the new C++11 one mainly
 // because cuda does not work (at least now) well with C++11 features.
 using boost::shared_ptr;
@@ -97,6 +105,8 @@ using std::vector;
 //全局初始化函数
 // A global initialization function that you should call in your main function.
 // Currently it initializes google flags and google logging.
+//主要是为了初始化google flag
+
 void GlobalInit(int* pargc, char*** pargv);
 
 // A singleton class to hold common caffe stuff, such as the handler that
@@ -111,7 +121,7 @@ class Caffe {
   // on OSX. Also fails on Linux with CUDA 7.0.18.
   //获取线程本地上下文，已经移动到common.cpp 代替boost/thread.hpp，防止与cuda的冲突
   //设置静态上下文
-  static Caffe& Get();
+  static Caffe& Get(); //获得指向caffe的静态指针地址
   //选择模式：CPU,GPU
   enum Brew { CPU, GPU };
 
@@ -161,18 +171,23 @@ class Caffe {
   // into the program since that may cause allocation of pinned memory being
   // freed in a non-pinned way, which may cause problems - I haven't verified
   // it personally but better to note it here in the header file.
+  //模式不能中途动态更改
   inline static void set_mode(Brew mode) { Get().mode_ = mode; }
   // Sets the random seed of both boost and curand
+  //设置随机数产生的速度
   static void set_random_seed(const unsigned int seed);
   // Sets the device. Since we have cublas and curand stuff, set device also
   // requires us to reset those values.
+  //设置使用设备的编号
   static void SetDevice(const int device_id);
   // Prints the current GPU status.
+  //查询GPU状态
   static void DeviceQuery();
   // Check if specified device is available
   static bool CheckDevice(const int device_id);
   // Search from start_id to the highest possible device ordinal,
   // return the ordinal of the first available device.
+  //查找设备
   static int FindDevice(const int start_id = 0);
   // Parallel training
   //并行训练
@@ -188,12 +203,13 @@ class Caffe {
   inline static bool root_solver() { return Get().solver_rank_ == 0; }
 //保护成员类
  protected:
+  //GPU 模式额外变量
 #ifndef CPU_ONLY
-  cublasHandle_t cublas_handle_;
-  curandGenerator_t curand_generator_;
+  cublasHandle_t cublas_handle_; //cublas句柄
+  curandGenerator_t curand_generator_; //cuda 随机数发生器
 #endif
   //随机数
-  shared_ptr<RNG> random_generator_;
+  shared_ptr<RNG> random_generator_;//通用随机数发生器
   //模式
   Brew mode_;
 
@@ -205,10 +221,10 @@ class Caffe {
 
  private:
   // The private constructor to avoid duplicate instantiation.
-  //私有构造函数，以避免重复实例化。同时只能在堆上初始化
+  //私有构造函数，以避免重复实例化。同时只能用new 在堆上初始化
   Caffe();
 
-  DISABLE_COPY_AND_ASSIGN(Caffe);
+  DISABLE_COPY_AND_ASSIGN(Caffe);//禁止类的复制和拷贝构造
 };
 
 }  // namespace caffe

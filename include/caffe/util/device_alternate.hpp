@@ -9,7 +9,7 @@
 // Stub out GPU calls as unavailable.
 //定义无GPU输出状况
 #define NO_GPU LOG(FATAL) << "Cannot use GPU in CPU-only Caffe: check mode."
-//定义设置使用GPU向前和向后计算的时候重载函数输出错误警告信息
+//定义设置使用GPU向前和向后计算的时候重载函数输出错误警告信息,这个一般由具体的实现类进行重载
 #define STUB_GPU(classname) \
 template <typename Dtype> \
 void classname<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom, \
@@ -18,12 +18,12 @@ template <typename Dtype> \
 void classname<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top, \
     const vector<bool>& propagate_down, \
     const vector<Blob<Dtype>*>& bottom) { NO_GPU; } \
-//更改重载类中函数作用
+//更改重载类中向前计算函数声明
 #define STUB_GPU_FORWARD(classname, funcname) \
 template <typename Dtype> \
 void classname<Dtype>::funcname##_##gpu(const vector<Blob<Dtype>*>& bottom, \
     const vector<Blob<Dtype>*>& top) { NO_GPU; } \
-
+//定义向后计算函数声明
 #define STUB_GPU_BACKWARD(classname, funcname) \
 template <typename Dtype> \
 void classname<Dtype>::funcname##_##gpu(const vector<Blob<Dtype>*>& top, \
@@ -31,20 +31,20 @@ void classname<Dtype>::funcname##_##gpu(const vector<Blob<Dtype>*>& top, \
     const vector<Blob<Dtype>*>& bottom) { NO_GPU; } \
 
 #else  // Normal GPU + CPU Caffe.
-
-#include <cublas_v2.h>
-#include <cuda.h>
-#include <cuda_runtime.h>
-#include <curand.h>
+//否则使用标准的CPU+GPU模式
+#include <cublas_v2.h>//引入cublas_v2
+#include <cuda.h> //引入cuda.h
+#include <cuda_runtime.h>//引入cuda运行时
+#include <curand.h>//
 #include <driver_types.h>  // cuda driver types
 #ifdef USE_CUDNN  // cuDNN acceleration library.
-#include "caffe/util/cudnn.hpp"
+#include "caffe/util/cudnn.hpp" //包含cudnn头文件
 #endif
 
 //
 // CUDA macros
 //
-//各种cuda确认函数
+//各种cuda函数句柄确认
 // CUDA: various checks for different function calls.
 #define CUDA_CHECK(condition) \
   /* Code block avoids redefinition of cudaError_t error */ \

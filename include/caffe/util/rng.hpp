@@ -8,16 +8,17 @@
 #include "boost/random/uniform_int.hpp"
 
 #include "caffe/common.hpp"
-
+//这个文件主要是使用boost 产生随机种子数
 namespace caffe {
 
-typedef boost::mt19937 rng_t;
+typedef boost::mt19937 rng_t; //随机数生成器
 
 inline rng_t* caffe_rng() {
   return static_cast<caffe::rng_t*>(Caffe::rng_stream().generator());
 }
 
 // Fisher–Yates algorithm
+//渔夫算法
 template <class RandomAccessIterator, class RandomGenerator>
 inline void shuffle(RandomAccessIterator begin, RandomAccessIterator end,
                     RandomGenerator* gen) {

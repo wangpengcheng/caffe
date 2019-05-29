@@ -104,4 +104,5 @@ inline int CAFFE_GET_BLOCKS(const int N) {
 wpc:
 此文件定义了对于CPU和GPU基本的类信息转换和线程操作
 包括错误信息的获取、所在计算单元的块位置
+相关错误信息的输出实现，在common.hpp中
 */

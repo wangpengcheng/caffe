@@ -230,3 +230,4 @@ class Caffe {
 }  // namespace caffe
 
 #endif  // CAFFE_COMMON_HPP_
+//文件主要定义了caffe基础类和多线程编程的基本信息，随机数的产生函数

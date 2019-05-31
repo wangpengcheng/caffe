@@ -7,9 +7,11 @@
 #include "caffe/common.hpp"
 #include "caffe/proto/caffe.pb.h"
 
+//确定cudnn版本
 #define CUDNN_VERSION_MIN(major, minor, patch) \
     (CUDNN_VERSION >= (major * 1000 + minor * 100 + patch))
 
+//检查环境，环境错误输出打印信息
 #define CUDNN_CHECK(condition) \
   do { \
     cudnnStatus_t status = condition; \
@@ -17,6 +19,7 @@
       << cudnnGetErrorString(status); \
   } while (0)
 
+//将错误状态转化为字符串
 inline const char* cudnnGetErrorString(cudnnStatus_t status) {
   switch (status) {
     case CUDNN_STATUS_SUCCESS:
@@ -57,14 +60,16 @@ inline const char* cudnnGetErrorString(cudnnStatus_t status) {
 
 namespace caffe {
 
+//定义cudnn 模块
 namespace cudnn {
 
+//定义模板类
 template <typename Dtype> class dataType;
 template<> class dataType<float>  {
  public:
-  static const cudnnDataType_t type = CUDNN_DATA_FLOAT;
-  static float oneval, zeroval;
-  static const void *one, *zero;
+  static const cudnnDataType_t type = CUDNN_DATA_FLOAT;//定义cudnn数据类型
+  static float oneval, zeroval; //定义零值
+  static const void *one, *zero; //定义0/1空指针
 };
 template<> class dataType<double> {
  public:
@@ -72,16 +77,23 @@ template<> class dataType<double> {
   static double oneval, zeroval;
   static const void *one, *zero;
 };
-
+//创建4维tensor计算
 template <typename Dtype>
 inline void createTensor4dDesc(cudnnTensorDescriptor_t* desc) {
   CUDNN_CHECK(cudnnCreateTensorDescriptor(desc));
 }
-
+//设置4维tensor
 template <typename Dtype>
-inline void setTensor4dDesc(cudnnTensorDescriptor_t* desc,
-    int n, int c, int h, int w,
-    int stride_n, int stride_c, int stride_h, int stride_w) {
+inline void setTensor4dDesc(cudnnTensorDescriptor_t* desc,//张量描述
+    int n, //输入图片数量,n
+    int c, //通道数目,z
+    int h, //高度 ,y
+    int w, // 宽度,x
+    int stride_n, // n方向上步长
+    int stride_c, //c方向上步长
+    int stride_h, //h方向上步长
+    int stride_w  //w方向上步长
+     ) {
   CUDNN_CHECK(cudnnSetTensor4dDescriptorEx(*desc, dataType<Dtype>::type,
         n, c, h, w, stride_n, stride_c, stride_h, stride_w));
 }
@@ -96,7 +108,7 @@ inline void setTensor4dDesc(cudnnTensorDescriptor_t* desc,
   setTensor4dDesc<Dtype>(desc, n, c, h, w,
                          stride_n, stride_c, stride_h, stride_w);
 }
-
+//创建滤波器张量
 template <typename Dtype>
 inline void createFilterDesc(cudnnFilterDescriptor_t* desc,
     int n, int c, int h, int w) {
@@ -114,7 +126,7 @@ template <typename Dtype>
 inline void createConvolutionDesc(cudnnConvolutionDescriptor_t* conv) {
   CUDNN_CHECK(cudnnCreateConvolutionDescriptor(conv));
 }
-
+//创建卷积张量
 template <typename Dtype>
 inline void setConvolutionDesc(cudnnConvolutionDescriptor_t* conv,
     cudnnTensorDescriptor_t bottom, cudnnFilterDescriptor_t filter,
@@ -128,21 +140,29 @@ inline void setConvolutionDesc(cudnnConvolutionDescriptor_t* conv,
       pad_h, pad_w, stride_h, stride_w, 1, 1, CUDNN_CROSS_CORRELATION));
 #endif
 }
-
+//创建池化描述
 template <typename Dtype>
-inline void createPoolingDesc(cudnnPoolingDescriptor_t* pool_desc,
-    PoolingParameter_PoolMethod poolmethod, cudnnPoolingMode_t* mode,
-    int h, int w, int pad_h, int pad_w, int stride_h, int stride_w) {
+inline void createPoolingDesc(cudnnPoolingDescriptor_t* pool_desc,//池化算子
+    PoolingParameter_PoolMethod poolmethod, //池化方法
+    cudnnPoolingMode_t* mode,//池化模型
+    int h, //高度 
+    int w, //宽度
+    int pad_h, // 扩充高度
+    int pad_w, //扩充宽度
+    int stride_h, //卷积核y步长
+    int stride_w //卷积核x步长
+    ) {
   switch (poolmethod) {
   case PoolingParameter_PoolMethod_MAX:
-    *mode = CUDNN_POOLING_MAX;
+    *mode = CUDNN_POOLING_MAX; //最大池化方法
     break;
   case PoolingParameter_PoolMethod_AVE:
-    *mode = CUDNN_POOLING_AVERAGE_COUNT_INCLUDE_PADDING;
+    *mode = CUDNN_POOLING_AVERAGE_COUNT_INCLUDE_PADDING; //均值池化方法
     break;
   default:
     LOG(FATAL) << "Unknown pooling method.";
   }
+  //创建池化描述
   CUDNN_CHECK(cudnnCreatePoolingDescriptor(pool_desc));
 #if CUDNN_VERSION_MIN(5, 0, 0)
   CUDNN_CHECK(cudnnSetPooling2dDescriptor(*pool_desc, *mode,
@@ -152,7 +172,7 @@ inline void createPoolingDesc(cudnnPoolingDescriptor_t* pool_desc,
         CUDNN_PROPAGATE_NAN, h, w, pad_h, pad_w, stride_h, stride_w));
 #endif
 }
-
+//激活层设置
 template <typename Dtype>
 inline void createActivationDescriptor(cudnnActivationDescriptor_t* activ_desc,
     cudnnActivationMode_t mode) {
@@ -167,3 +187,8 @@ inline void createActivationDescriptor(cudnnActivationDescriptor_t* activ_desc,
 
 #endif  // USE_CUDNN
 #endif  // CAFFE_UTIL_CUDNN_H_
+//主要对cudnn进行了封装，
+//定义了张量创建
+//卷积
+//池化
+//激活

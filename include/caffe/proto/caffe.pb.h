@@ -27,6 +27,7 @@
 #include <google/protobuf/unknown_field_set.h>
 // @@protoc_insertion_point(includes)
 
+//
 namespace caffe {
 
 // Internal implementation detail -- do not call these.

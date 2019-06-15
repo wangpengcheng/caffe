@@ -1,28 +1,37 @@
+//使用proto2歇息
 syntax = "proto2";
-
+//定义caffe包
 package caffe;
 
 // Specifies the shape (dimensions) of a Blob.
+
 message BlobShape {
-  repeated int64 dim = 1 [packed = true];
+  //repeated 表示可以存放多个数据，相当于C++中的vector：
+  //http://www.sohu.com/a/168549441_216613
+  //https://blog.csdn.net/u011334621/article/details/51735418
+  repeated int64 dim = 1 [packed = true];//使用高级压缩编码
 }
 
+//定义blob
 message BlobProto {
-  optional BlobShape shape = 7;
-  repeated float data = 5 [packed = true];
-  repeated float diff = 6 [packed = true];
-  repeated double double_data = 8 [packed = true];
-  repeated double double_diff = 9 [packed = true];
+  //
+  optional BlobShape shape = 7;//形状记录blob的维度
+  repeated float data = 5 [packed = true];//单精度数据
+  repeated float diff = 6 [packed = true];//单精度误差
+  repeated double double_data = 8 [packed = true];//双精度数据
+  repeated double double_diff = 9 [packed = true];//双精度误差
 
   // 4D dimensions -- deprecated.  Use "shape" instead.
-  optional int32 num = 1 [default = 0];
-  optional int32 channels = 2 [default = 0];
-  optional int32 height = 3 [default = 0];
-  optional int32 width = 4 [default = 0];
+  // 4D维度，已经弃用，用形状代替
+  optional int32 num = 1 [default = 0];//数量
+  optional int32 channels = 2 [default = 0]; //通道数目
+  optional int32 height = 3 [default = 0];//高度
+  optional int32 width = 4 [default = 0];//宽度
 }
 
 // The BlobProtoVector is simply a way to pass multiple blobproto instances
 // around.
+// BlobProtoVector只是一种传递多个blobproto实例的方法。
 message BlobProtoVector {
   repeated BlobProto blobs = 1;
 }

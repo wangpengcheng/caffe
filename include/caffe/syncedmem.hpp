@@ -21,7 +21,7 @@ namespace caffe {
 //在单GPU案例中，性能的改善似乎微不足道
 //但对于并行训练可能更重要。 最重要的是，
 //它改善了许多GPU上大型模型的稳定性。
-//  
+// 
 inline void CaffeMallocHost(void** ptr, size_t size, bool* use_cuda) {
 #ifndef CPU_ONLY
   if (Caffe::mode() == Caffe::GPU) {

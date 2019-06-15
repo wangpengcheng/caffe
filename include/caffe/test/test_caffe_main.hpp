@@ -25,7 +25,7 @@ using std::endl;
 int main(int argc, char** argv);
 
 namespace caffe {
-
+//定义测试基础接口模板类
 template <typename TypeParam>
 class MultiDeviceTest : public ::testing::Test {
  public:
@@ -39,23 +39,25 @@ class MultiDeviceTest : public ::testing::Test {
 
 typedef ::testing::Types<float, double> TestDtypes;
 
+//cpu设备类
 template <typename TypeParam>
 struct CPUDevice {
   typedef TypeParam Dtype;
   static const Caffe::Brew device = Caffe::CPU;
 };
 
+//cpu测试类
 template <typename Dtype>
 class CPUDeviceTest : public MultiDeviceTest<CPUDevice<Dtype> > {
 };
 
 #ifdef CPU_ONLY
-
+//cpu测试类型和设备类型别名
 typedef ::testing::Types<CPUDevice<float>,
                          CPUDevice<double> > TestDtypesAndDevices;
 
 #else
-
+//GPU 测试基本类
 template <typename TypeParam>
 struct GPUDevice {
   typedef TypeParam Dtype;
@@ -65,7 +67,7 @@ struct GPUDevice {
 template <typename Dtype>
 class GPUDeviceTest : public MultiDeviceTest<GPUDevice<Dtype> > {
 };
-
+//定义测试类别
 typedef ::testing::Types<CPUDevice<float>, CPUDevice<double>,
                          GPUDevice<float>, GPUDevice<double> >
                          TestDtypesAndDevices;

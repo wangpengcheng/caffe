@@ -9,6 +9,7 @@
 #include "caffe/proto/caffe.pb.h"
 #include "caffe/syncedmem.hpp"
 
+// 设置最大的
 const int kMaxBlobAxes = 32;
 
 namespace caffe {
@@ -20,6 +21,7 @@ namespace caffe {
  *
  * TODO(dox): more thorough description.
  */
+// 
 template <typename Dtype>
 class Blob {
  public:

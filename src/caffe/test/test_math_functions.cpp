@@ -18,11 +18,12 @@ class MathFunctionsTest : public MultiDeviceTest<TypeParam> {
   typedef typename TypeParam::Dtype Dtype;
 
  protected:
+  //定义主要的构造函数
   MathFunctionsTest()
       : blob_bottom_(new Blob<Dtype>()),
         blob_top_(new Blob<Dtype>()) {
   }
-
+  //初始化变量函数
   virtual void SetUp() {
     Caffe::set_random_seed(1701);
     this->blob_bottom_->Reshape(11, 17, 19, 23);
@@ -38,8 +39,9 @@ class MathFunctionsTest : public MultiDeviceTest<TypeParam> {
     delete blob_bottom_;
     delete blob_top_;
   }
-
+  // Blob 指针 底部
   Blob<Dtype>* const blob_bottom_;
+  //Blob 指针顶部
   Blob<Dtype>* const blob_top_;
 };
 

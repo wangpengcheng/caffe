@@ -5,6 +5,8 @@ package caffe;
 
 // Specifies the shape (dimensions) of a Blob.
 
+//message 定义传递消息的基本形状类；主要定义Blob的形状维度
+
 message BlobShape {
   //repeated 表示可以存放多个数据，相当于C++中的vector：
   //http://www.sohu.com/a/168549441_216613
@@ -16,8 +18,11 @@ message BlobShape {
 message BlobProto {
   //
   optional BlobShape shape = 7;//形状记录blob的维度
+  //记录数据的重复，一个blob可能会连接多个其他的blob，即一个神经元可以与多个神经元相连接
+  //单精度数据和误差
   repeated float data = 5 [packed = true];//单精度数据
   repeated float diff = 6 [packed = true];//单精度误差
+  //双精度数据和误差
   repeated double double_data = 8 [packed = true];//双精度数据
   repeated double double_diff = 9 [packed = true];//双精度误差
 
@@ -32,20 +37,29 @@ message BlobProto {
 // The BlobProtoVector is simply a way to pass multiple blobproto instances
 // around.
 // BlobProtoVector只是一种传递多个blobproto实例的方法。
+//定义砖块向量，帮助传递多块砖块，例如一个简单的单元最少需要传入和传出两个单元
 message BlobProtoVector {
   repeated BlobProto blobs = 1;
 }
+//底层数据结构Datum，主要用来连接图片和对应的分类
+//数据读入时，将Mat转化为Datun
+//http://www.it610.com/article/5151649.htm
 
 message Datum {
+  //通道数目
   optional int32 channels = 1;
   optional int32 height = 2;
   optional int32 width = 3;
   // the actual image data, in bytes
+  //实际图像数据，以字节为单位
   optional bytes data = 4;
+  //标签编号
   optional int32 label = 5;
   // Optionally, the datum could also hold float data.
+  // 可选地，数据也可以保存浮点数据。估计是为了浮点计算设计的
   repeated float float_data = 6;
   // If true data contains an encoded image that need to be decoded
+  // 如果真实数据包含需要解码的编码图像,图像是否需要解码
   optional bool encoded = 7 [default = false];
 }
 

@@ -29,6 +29,7 @@ class Blob {
        : data_(), diff_(), count_(0), capacity_(0) {}
 
   /// @brief Deprecated; use <code>Blob(const vector<int>& shape)</code>.
+       //blob 的构造函数
   explicit Blob(const int num, const int channels, const int height,
       const int width);
   explicit Blob(const vector<int>& shape);
@@ -50,17 +51,23 @@ class Blob {
    * an error; either Net::Forward or Net::Reshape need to be called to
    * propagate the new input shape to higher layers.
    */
+  //函数主要是在Layer::Reshape被调用的时候，重新设置blob的大小。
+  //如果还没有足够的内存，则只会重新分配内存，并且永远不会释放多余的内存。
+  //请注意，重新整形输入blob并立即调用Net :: Backward是一个错误; 
+  //需要调用Net :: Forward或Net :: Reshape将新输入形状传播到更高层。
   void Reshape(const vector<int>& shape);
   void Reshape(const BlobShape& shape);
   void ReshapeLike(const Blob& other);
+ //将形状转换为string
   inline string shape_string() const {
     ostringstream stream;
     for (int i = 0; i < shape_.size(); ++i) {
       stream << shape_[i] << " ";
     }
-    stream << "(" << count_ << ")";
+    stream << "(" << count_ << ")";//输出数据总和
     return stream.str();
   }
+  //返回形状
   inline const vector<int>& shape() const { return shape_; }
   /**
    * @brief Returns the dimension of the index-th axis (or the negative index-th
@@ -70,10 +77,13 @@ class Blob {
    *        "canonicalized" using CanonicalAxisIndex.
    *        Dies on out of range index.
    */
+  //索引轴索引，可能是负数，因为它将使用CanonicalAxisIndex进行“规范化”。 防止超出范围。
   inline int shape(int index) const {
     return shape_[CanonicalAxisIndex(index)];
   }
+  //返回维度的大小
   inline int num_axes() const { return shape_.size(); }
+  //返回数据的总计数
   inline int count() const { return count_; }
 
   /**
@@ -84,13 +94,16 @@ class Blob {
    *
    * @param end_axis The first axis to exclude from the slice.
    */
+  //统计起始维度到终点维度的数据量，可以计算图片大小，shap(3)*shap(2); 总的通道数目shap(0)*shap(1)
   inline int count(int start_axis, int end_axis) const {
+    //限定条件，检查输入的合法
     CHECK_LE(start_axis, end_axis);
     CHECK_GE(start_axis, 0);
     CHECK_GE(end_axis, 0);
     CHECK_LE(start_axis, num_axes());
     CHECK_LE(end_axis, num_axes());
     int count = 1;
+    //统计数量
     for (int i = start_axis; i < end_axis; ++i) {
       count *= shape(i);
     }
@@ -102,6 +115,7 @@ class Blob {
    *
    * @param start_axis The first axis to include in the slice.
    */
+  //起始维度到最后的数据总量
   inline int count(int start_axis) const {
     return count(start_axis, num_axes());
   }
@@ -117,14 +131,15 @@ class Blob {
    *        the second to last if index == -2, etc.
    *        Dies on out of range index.
    */
+  // 支持负数维度索引，负数表示从后往前，返回的是正确的维度索引（相当于将负数索引进行的转换）  
   inline int CanonicalAxisIndex(int axis_index) const {
-    CHECK_GE(axis_index, -num_axes())
+    CHECK_GE(axis_index, -num_axes())//检查是否小于负数
         << "axis " << axis_index << " out of range for " << num_axes()
         << "-D Blob with shape " << shape_string();
-    CHECK_LT(axis_index, num_axes())
+    CHECK_LT(axis_index, num_axes())//检查是否大于正数
         << "axis " << axis_index << " out of range for " << num_axes()
         << "-D Blob with shape " << shape_string();
-    if (axis_index < 0) {
+    if (axis_index < 0) {//返回逆序的坐标位置
       return axis_index + num_axes();
     }
     return axis_index;
@@ -138,11 +153,13 @@ class Blob {
   inline int height() const { return LegacyShape(2); }
   /// @brief Deprecated legacy shape accessor width: use shape(3) instead.
   inline int width() const { return LegacyShape(3); }
+  //形状遗产，主要是为了兼容旧的接口
   inline int LegacyShape(int index) const {
     CHECK_LE(num_axes(), 4)
         << "Cannot use legacy accessors on Blobs with > 4 axes.";
     CHECK_LT(index, 4);
     CHECK_GE(index, -4);
+    //超出范围直接返回
     if (index >= num_axes() || index < -num_axes()) {
       // Axis is out of range, but still in [0, 3] (or [-4, -1] for reverse
       // indexing) -- this special case simulates the one-padding used to fill
@@ -151,9 +168,10 @@ class Blob {
     }
     return shape(index);
   }
-
+  //获取数据的偏移
   inline int offset(const int n, const int c = 0, const int h = 0,
       const int w = 0) const {
+    //检验数据是否输入合理
     CHECK_GE(n, 0);
     CHECK_LE(n, num());
     CHECK_GE(channels(), 0);
@@ -162,12 +180,14 @@ class Blob {
     CHECK_LE(h, height());
     CHECK_GE(width(), 0);
     CHECK_LE(w, width());
+    //返回数据下标
     return ((n * channels() + c) * height() + h) * width() + w;
   }
-
+  //输入向量返回数据下标
   inline int offset(const vector<int>& indices) const {
     CHECK_LE(indices.size(), num_axes());
     int offset = 0;
+    //提取维度相乘
     for (int i = 0; i < num_axes(); ++i) {
       offset *= shape(i);
       if (indices.size() > i) {
@@ -187,19 +207,21 @@ class Blob {
    *        of other (and die otherwise); if true, Reshape this Blob to other's
    *        shape if necessary
    */
+  //从其他的实例中拷贝数据
   void CopyFrom(const Blob<Dtype>& source, bool copy_diff = false,
       bool reshape = false);
 
+  //获取前向传播数据指针
   inline Dtype data_at(const int n, const int c, const int h,
       const int w) const {
     return cpu_data()[offset(n, c, h, w)];
   }
 
+  //后向传播数据
   inline Dtype diff_at(const int n, const int c, const int h,
       const int w) const {
     return cpu_diff()[offset(n, c, h, w)];
   }
-
   inline Dtype data_at(const vector<int>& index) const {
     return cpu_data()[offset(index)];
   }
@@ -207,17 +229,17 @@ class Blob {
   inline Dtype diff_at(const vector<int>& index) const {
     return cpu_diff()[offset(index)];
   }
-
+  //获取前向传播数据
   inline const shared_ptr<SyncedMemory>& data() const {
     CHECK(data_);
     return data_;
   }
-
+  //获取后向传播数据
   inline const shared_ptr<SyncedMemory>& diff() const {
     CHECK(diff_);
     return diff_;
   }
-
+  //------ 基本数据的存取类 start ------
   const Dtype* cpu_data() const;
   void set_cpu_data(Dtype* data);
   const int* gpu_shape() const;
@@ -225,24 +247,32 @@ class Blob {
   void set_gpu_data(Dtype* data);
   const Dtype* cpu_diff() const;
   const Dtype* gpu_diff() const;
+  //------ 基本数据的存取类 end ------
+  // 获取多的数据
   Dtype* mutable_cpu_data();
   Dtype* mutable_gpu_data();
   Dtype* mutable_cpu_diff();
   Dtype* mutable_gpu_diff();
-  void Update();
+  //更新数据
+  void Update();//应该是为了计算
+  //从BlobProto 中提取文件
   void FromProto(const BlobProto& proto, bool reshape = true);
+  //将数据转换为 proto
   void ToProto(BlobProto* proto, bool write_diff = false) const;
 
   /// @brief Compute the sum of absolute values (L1 norm) of the data.
+  //向前一维向量绝对值之和
   Dtype asum_data() const;
   /// @brief Compute the sum of absolute values (L1 norm) of the diff.
   Dtype asum_diff() const;
+  //平方和
   /// @brief Compute the sum of squares (L2 norm squared) of the data.
   Dtype sumsq_data() const;
   /// @brief Compute the sum of squares (L2 norm squared) of the diff.
   Dtype sumsq_diff() const;
 
   /// @brief Scale the blob data by a constant factor.
+  //按常数因子缩放blob数据。
   void scale_data(Dtype scale_factor);
   /// @brief Scale the blob diff by a constant factor.
   void scale_diff(Dtype scale_factor);
@@ -254,6 +284,9 @@ class Blob {
    *
    * This deallocates the SyncedMemory holding this Blob's data_, as
    * shared_ptr calls its destructor when reset with the "=" operator.
+   * 将别的blob的data和响应的diff指针给这个Blob，实现数据的共享。 
+   * 同时需要注意的是这个操作会引起这个Blob里面的SyncedMemory被释放， 
+   * 因为shared_ptr指针被用=重置的时候回调用响应的析构器。 
    */
   void ShareData(const Blob& other);
   /**
@@ -269,14 +302,14 @@ class Blob {
   bool ShapeEquals(const BlobProto& other);
 
  protected:
-  shared_ptr<SyncedMemory> data_;
-  shared_ptr<SyncedMemory> diff_;
-  shared_ptr<SyncedMemory> shape_data_;
-  vector<int> shape_;
-  int count_;
-  int capacity_;
+  shared_ptr<SyncedMemory> data_;//向前传播数据
+  shared_ptr<SyncedMemory> diff_;//向后传播数据
+  shared_ptr<SyncedMemory> shape_data_;//旧形状数据
+  vector<int> shape_;//新形状数据，维度向量，一般是4个
+  int count_;//所有维度相乘，即数据的总的个数
+  int capacity_;//容量
 
-  DISABLE_COPY_AND_ASSIGN(Blob);
+  DISABLE_COPY_AND_ASSIGN(Blob);//禁止拷贝和拥有
 };  // class Blob
 
 }  // namespace caffe

@@ -9,6 +9,7 @@
 namespace caffe {
 
 template <typename Dtype>
+  //重新更新的函数
 void Blob<Dtype>::Reshape(const int num, const int channels, const int height,
     const int width) {
   vector<int> shape(4);

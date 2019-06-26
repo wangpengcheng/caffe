@@ -84,7 +84,10 @@ inline void caffe_memset(const size_t N, const int alpha, void* X) {
 
 template <typename Dtype>
 void caffe_add_scalar(const int N, const Dtype alpha, Dtype *X);
-
+//
+//功能：X = alpha*X 
+//N： X中element的个数
+//
 template <typename Dtype>
 void caffe_scal(const int N, const Dtype alpha, Dtype *X);
 
@@ -136,9 +139,13 @@ void caffe_log(const int n, const Dtype* a, Dtype* y);
 template <typename Dtype>
 void caffe_abs(const int n, const Dtype* a, Dtype* y);
 
+
+
 template <typename Dtype>
 Dtype caffe_cpu_dot(const int n, const Dtype* x, const Dtype* y);
 
+//功能： 返回 vector X 和 vector Y 的内积。
+//incx， incy :步长，即每隔incx 或 incy 个element 进行操作。
 template <typename Dtype>
 Dtype caffe_cpu_strided_dot(const int n, const Dtype* x, const int incx,
     const Dtype* y, const int incy);
@@ -245,7 +252,7 @@ void caffe_gpu_scal(const int N, const Dtype alpha, Dtype *X);
 template <typename Dtype>
 void caffe_gpu_scal(const int N, const Dtype alpha, Dtype* X, cudaStream_t str);
 #endif
-
+//
 template <typename Dtype>
 void caffe_gpu_add(const int N, const Dtype* a, const Dtype* b, Dtype* y);
 

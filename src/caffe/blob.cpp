@@ -9,7 +9,7 @@
 namespace caffe {
 
 template <typename Dtype>
-  //重新更新的函数
+  //重新更新的函数；主要是为了更新维度信息
 void Blob<Dtype>::Reshape(const int num, const int channels, const int height,
     const int width) {
   vector<int> shape(4);
@@ -21,14 +21,18 @@ void Blob<Dtype>::Reshape(const int num, const int channels, const int height,
 }
 
 template <typename Dtype>
+//重新更新的函数，已经弃用
 void Blob<Dtype>::Reshape(const vector<int>& shape) {
+  //确认内存分配没有超过定义的最大维度
   CHECK_LE(shape.size(), kMaxBlobAxes);
   count_ = 1;
   shape_.resize(shape.size());
   if (!shape_data_ || shape_data_->size() < shape.size() * sizeof(int)) {
     shape_data_.reset(new SyncedMemory(shape.size() * sizeof(int)));
   }
+  //强制转换为整形的指针
   int* shape_data = static_cast<int*>(shape_data_->mutable_cpu_data());
+  //是否内存分配正确
   for (int i = 0; i < shape.size(); ++i) {
     CHECK_GE(shape[i], 0);
     if (count_ != 0) {
@@ -38,6 +42,7 @@ void Blob<Dtype>::Reshape(const vector<int>& shape) {
     shape_[i] = shape[i];
     shape_data[i] = shape[i];
   }
+  //更新容量信息
   if (count_ > capacity_) {
     capacity_ = count_;
     data_.reset(new SyncedMemory(capacity_ * sizeof(Dtype)));
@@ -46,6 +51,7 @@ void Blob<Dtype>::Reshape(const vector<int>& shape) {
 }
 
 template <typename Dtype>
+//更新维度
 void Blob<Dtype>::Reshape(const BlobShape& shape) {
   CHECK_LE(shape.dim_size(), kMaxBlobAxes);
   vector<int> shape_vec(shape.dim_size());
@@ -61,6 +67,7 @@ void Blob<Dtype>::ReshapeLike(const Blob<Dtype>& other) {
 }
 
 template <typename Dtype>
+//定义构造函数
 Blob<Dtype>::Blob(const int num, const int channels, const int height,
     const int width)
   // capacity_ must be initialized before calling Reshape
@@ -92,6 +99,7 @@ void Blob<Dtype>::set_cpu_data(Dtype* data) {
   CHECK(data);
   // Make sure CPU and GPU sizes remain equal
   size_t size = count_ * sizeof(Dtype);
+  //如果旧的容量不同，重新分配内存
   if (data_->size() != size) {
     data_.reset(new SyncedMemory(size));
     diff_.reset(new SyncedMemory(size));
@@ -128,13 +136,13 @@ const Dtype* Blob<Dtype>::gpu_diff() const {
   CHECK(diff_);
   return (const Dtype*)diff_->gpu_data();
 }
-
+//强制转换为CPU数据
 template <typename Dtype>
 Dtype* Blob<Dtype>::mutable_cpu_data() {
   CHECK(data_);
   return static_cast<Dtype*>(data_->mutable_cpu_data());
 }
-
+//强制GPU数据
 template <typename Dtype>
 Dtype* Blob<Dtype>::mutable_gpu_data() {
   CHECK(data_);
@@ -152,22 +160,23 @@ Dtype* Blob<Dtype>::mutable_gpu_diff() {
   CHECK(diff_);
   return static_cast<Dtype*>(diff_->mutable_gpu_data());
 }
-
+//共享数据
 template <typename Dtype>
 void Blob<Dtype>::ShareData(const Blob& other) {
   CHECK_EQ(count_, other.count());
-  data_ = other.data();
+  data_ = other.data();//直接复制对方的前向数据指针
 }
 
 template <typename Dtype>
 void Blob<Dtype>::ShareDiff(const Blob& other) {
   CHECK_EQ(count_, other.count());
-  diff_ = other.diff();
+  diff_ = other.diff();//直接复制对方的后向数据指针
 }
 
 // The "update" method is used for parameter blobs in a Net, which are stored
 // as Blob<float> or Blob<double> -- hence we do not define it for
 // Blob<int> or Blob<unsigned int>.
+//int数据更新函数未定义
 template <> void Blob<unsigned int>::Update() { NOT_IMPLEMENTED; }
 template <> void Blob<int>::Update() { NOT_IMPLEMENTED; }
 
@@ -177,6 +186,7 @@ void Blob<Dtype>::Update() {
   switch (data_->head()) {
   case SyncedMemory::HEAD_AT_CPU:
     // perform computation on CPU
+    //计算总的数据量
     caffe_axpy<Dtype>(count_, Dtype(-1),
         static_cast<const Dtype*>(diff_->cpu_data()),
         static_cast<Dtype*>(data_->mutable_cpu_data()));
@@ -185,6 +195,7 @@ void Blob<Dtype>::Update() {
   case SyncedMemory::SYNCED:
 #ifndef CPU_ONLY
     // perform computation on GPU
+    //计算GPU中的内存总量
     caffe_gpu_axpy<Dtype>(count_, Dtype(-1),
         static_cast<const Dtype*>(diff_->gpu_data()),
         static_cast<Dtype*>(data_->mutable_gpu_data()));
@@ -196,17 +207,17 @@ void Blob<Dtype>::Update() {
     LOG(FATAL) << "Syncedmem not initialized.";
   }
 }
-
+//int型的整合数据
 template <> unsigned int Blob<unsigned int>::asum_data() const {
   NOT_IMPLEMENTED;
   return 0;
 }
-
+//int型的整合数据
 template <> int Blob<int>::asum_data() const {
   NOT_IMPLEMENTED;
   return 0;
 }
-
+//返回所有向量的绝对值之和
 template <typename Dtype>
 Dtype Blob<Dtype>::asum_data() const {
   if (!data_) { return 0; }
@@ -241,7 +252,7 @@ template <> int Blob<int>::asum_diff() const {
   NOT_IMPLEMENTED;
   return 0;
 }
-
+//向后数据的总和
 template <typename Dtype>
 Dtype Blob<Dtype>::asum_diff() const {
   if (!diff_) { return 0; }
@@ -285,6 +296,7 @@ Dtype Blob<Dtype>::sumsq_data() const {
   switch (data_->head()) {
   case SyncedMemory::HEAD_AT_CPU:
     data = cpu_data();
+    //直接矩阵乘法返回内积
     sumsq = caffe_cpu_dot(count_, data, data);
     break;
   case SyncedMemory::HEAD_AT_GPU:
@@ -348,7 +360,7 @@ template <> void Blob<unsigned int>::scale_data(unsigned int scale_factor) {
 template <> void Blob<int>::scale_data(int scale_factor) {
   NOT_IMPLEMENTED;
 }
-
+//数据缩放： 乘以系数
 template <typename Dtype>
 void Blob<Dtype>::scale_data(Dtype scale_factor) {
   Dtype* data;
@@ -373,7 +385,7 @@ void Blob<Dtype>::scale_data(Dtype scale_factor) {
     LOG(FATAL) << "Unknown SyncedMemory head state: " << data_->head();
   }
 }
-
+// 
 template <> void Blob<unsigned int>::scale_diff(unsigned int scale_factor) {
   NOT_IMPLEMENTED;
 }
@@ -381,7 +393,7 @@ template <> void Blob<unsigned int>::scale_diff(unsigned int scale_factor) {
 template <> void Blob<int>::scale_diff(int scale_factor) {
   NOT_IMPLEMENTED;
 }
-
+//反向系数变化
 template <typename Dtype>
 void Blob<Dtype>::scale_diff(Dtype scale_factor) {
   Dtype* diff;
@@ -406,7 +418,7 @@ void Blob<Dtype>::scale_diff(Dtype scale_factor) {
     LOG(FATAL) << "Unknown SyncedMemory head state: " << diff_->head();
   }
 }
-
+//检查当前的blob和已知的 other 的 shape 是否相同，相同返回true
 template <typename Dtype>
 bool Blob<Dtype>::ShapeEquals(const BlobProto& other) {
   if (other.has_num() || other.has_channels() ||
@@ -431,7 +443,11 @@ bool Blob<Dtype>::ShapeEquals(const BlobProto& other) {
 }
 
 template <typename Dtype>
-void Blob<Dtype>::CopyFrom(const Blob& source, bool copy_diff, bool reshape) {
+//从其他的实例中拷贝数据,
+void Blob<Dtype>::CopyFrom(const Blob& source, //数据源
+                            bool copy_diff, //是否拷贝反向数据
+                            bool reshape // 是否重新塑性
+                            ) {
   if (source.count() != count_ || source.shape() != shape_) {
     if (reshape) {
       ReshapeLike(source);
@@ -439,7 +455,7 @@ void Blob<Dtype>::CopyFrom(const Blob& source, bool copy_diff, bool reshape) {
       LOG(FATAL) << "Trying to copy blobs of different sizes.";
     }
   }
-  switch (Caffe::mode()) {
+  switch (Caffe::mode()) {//
   case Caffe::GPU:
     if (copy_diff) {
       caffe_copy(count_, source.gpu_diff(),
@@ -464,6 +480,7 @@ void Blob<Dtype>::CopyFrom(const Blob& source, bool copy_diff, bool reshape) {
 }
 
 template <typename Dtype>
+//通过BlobProto构造Blob
 void Blob<Dtype>::FromProto(const BlobProto& proto, bool reshape) {
   if (reshape) {
     vector<int> shape;
@@ -486,7 +503,7 @@ void Blob<Dtype>::FromProto(const BlobProto& proto, bool reshape) {
   } else {
     CHECK(ShapeEquals(proto)) << "shape mismatch (reshape not set)";
   }
-  // copy data
+  // copy data，数据切换到cpu上
   Dtype* data_vec = mutable_cpu_data();
   if (proto.double_data_size() > 0) {
     CHECK_EQ(count_, proto.double_data_size());
@@ -513,7 +530,7 @@ void Blob<Dtype>::FromProto(const BlobProto& proto, bool reshape) {
     }
   }
 }
-
+//转换为blobproto
 template <>
 void Blob<double>::ToProto(BlobProto* proto, bool write_diff) const {
   proto->clear_shape();

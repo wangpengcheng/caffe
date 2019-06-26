@@ -6,7 +6,7 @@
 #include "caffe/util/device_alternate.hpp"
 
 namespace caffe {
-
+//时间计时接口类
 class Timer {
  public:
   Timer();
@@ -36,7 +36,7 @@ class Timer {
   float elapsed_milliseconds_;
   float elapsed_microseconds_;
 };
-
+//cpu时钟
 class CPUTimer : public Timer {
  public:
   explicit CPUTimer();

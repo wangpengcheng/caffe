@@ -3,6 +3,7 @@
 #include "caffe/util/math_functions.hpp"
 
 namespace caffe {
+  //内存分配类的构造函数
 SyncedMemory::SyncedMemory()
   : cpu_ptr_(NULL), gpu_ptr_(NULL), size_(0), head_(UNINITIALIZED),
     own_cpu_data_(false), cpu_malloc_use_cuda_(false), own_gpu_data_(false) {
@@ -12,7 +13,7 @@ SyncedMemory::SyncedMemory()
 #endif
 #endif
 }
-
+//含有大小信息的构造函数
 SyncedMemory::SyncedMemory(size_t size)
   : cpu_ptr_(NULL), gpu_ptr_(NULL), size_(size), head_(UNINITIALIZED),
     own_cpu_data_(false), cpu_malloc_use_cuda_(false), own_gpu_data_(false) {
@@ -22,7 +23,7 @@ SyncedMemory::SyncedMemory(size_t size)
 #endif
 #endif
 }
-
+//析构函数
 SyncedMemory::~SyncedMemory() {
   check_device();
   if (cpu_ptr_ && own_cpu_data_) {
@@ -35,7 +36,7 @@ SyncedMemory::~SyncedMemory() {
   }
 #endif  // CPU_ONLY
 }
-
+//将数据转移到cpu
 inline void SyncedMemory::to_cpu() {
   check_device();
   switch (head_) {
@@ -62,13 +63,14 @@ inline void SyncedMemory::to_cpu() {
     break;
   }
 }
-
+//将数据转移到GPU
 inline void SyncedMemory::to_gpu() {
   check_device();
 #ifndef CPU_ONLY
   switch (head_) {
-  case UNINITIALIZED:
+  case UNINITIALIZED://没有初始化直接分配内存
     CUDA_CHECK(cudaMalloc(&gpu_ptr_, size_));
+    //显存空间初始化--置0
     caffe_gpu_memset(size_, 0, gpu_ptr_);
     head_ = HEAD_AT_GPU;
     own_gpu_data_ = true;
@@ -89,7 +91,7 @@ inline void SyncedMemory::to_gpu() {
   NO_GPU;
 #endif
 }
-
+// cpu指针
 const void* SyncedMemory::cpu_data() {
   check_device();
   to_cpu();
@@ -106,7 +108,7 @@ void SyncedMemory::set_cpu_data(void* data) {
   head_ = HEAD_AT_CPU;
   own_cpu_data_ = false;
 }
-
+//GPU指针
 const void* SyncedMemory::gpu_data() {
   check_device();
 #ifndef CPU_ONLY
@@ -139,7 +141,7 @@ void* SyncedMemory::mutable_cpu_data() {
   head_ = HEAD_AT_CPU;
   return cpu_ptr_;
 }
-
+//数据同步到gpu
 void* SyncedMemory::mutable_gpu_data() {
   check_device();
 #ifndef CPU_ONLY
@@ -153,6 +155,7 @@ void* SyncedMemory::mutable_gpu_data() {
 }
 
 #ifndef CPU_ONLY
+//异步流同步到GPU
 void SyncedMemory::async_gpu_push(const cudaStream_t& stream) {
   check_device();
   CHECK(head_ == HEAD_AT_CPU);
@@ -166,15 +169,19 @@ void SyncedMemory::async_gpu_push(const cudaStream_t& stream) {
   head_ = SYNCED;
 }
 #endif
-
+//确认设备
 void SyncedMemory::check_device() {
 #ifndef CPU_ONLY
 #ifdef DEBUG
   int device;
+  //确认设备
   cudaGetDevice(&device);
   CHECK(device == device_);
+  //GPU指针存在且不为空
   if (gpu_ptr_ && own_gpu_data_) {
+    //定义指针属性
     cudaPointerAttributes attributes;
+    //确认指针属性
     CUDA_CHECK(cudaPointerGetAttributes(&attributes, gpu_ptr_));
     CHECK(attributes.device == device_);
   }

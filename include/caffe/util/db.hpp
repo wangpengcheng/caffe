@@ -5,11 +5,11 @@
 
 #include "caffe/common.hpp"
 #include "caffe/proto/caffe.pb.h"
-
+//主要是用来存储数据
 namespace caffe { namespace db {
 
 enum Mode { READ, WRITE, NEW };
-
+//游标指针,主要是来进行db数据的索引
 class Cursor {
  public:
   Cursor() { }
@@ -22,7 +22,7 @@ class Cursor {
 
   DISABLE_COPY_AND_ASSIGN(Cursor);
 };
-
+//事物类，主要用来进行事物的执行
 class Transaction {
  public:
   Transaction() { }
@@ -32,7 +32,7 @@ class Transaction {
 
   DISABLE_COPY_AND_ASSIGN(Transaction);
 };
-
+//数据库封装类，主要是查询和和执行事物功能
 class DB {
  public:
   DB() { }
@@ -44,8 +44,9 @@ class DB {
 
   DISABLE_COPY_AND_ASSIGN(DB);
 };
-
+//根据图像的类型lmdb和leveldb来返回数据 注意这是key-value数据库
 DB* GetDB(DataParameter::DB backend);
+//根据拷贝返回数据类型
 DB* GetDB(const string& backend);
 
 }  // namespace db

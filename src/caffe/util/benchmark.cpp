@@ -4,14 +4,14 @@
 #include "caffe/util/benchmark.hpp"
 
 namespace caffe {
-
+//时钟的构造函数
 Timer::Timer()
     : initted_(false),
       running_(false),
       has_run_at_least_once_(false) {
-  Init();
+  Init();//初始化时钟
 }
-
+//析构函数，释放时钟内存
 Timer::~Timer() {
   if (Caffe::mode() == Caffe::GPU) {
 #ifndef CPU_ONLY
@@ -22,7 +22,7 @@ Timer::~Timer() {
 #endif
   }
 }
-
+//开始计时
 void Timer::Start() {
   if (!running()) {
     if (Caffe::mode() == Caffe::GPU) {
@@ -32,13 +32,14 @@ void Timer::Start() {
       NO_GPU;
 #endif
     } else {
+		//cpu开始计时
       start_cpu_ = boost::posix_time::microsec_clock::local_time();
     }
     running_ = true;
     has_run_at_least_once_ = true;
   }
 }
-
+//停止计时
 void Timer::Stop() {
   if (running()) {
     if (Caffe::mode() == Caffe::GPU) {
@@ -48,23 +49,26 @@ void Timer::Stop() {
       NO_GPU;
 #endif
     } else {
+		//获取cpu时钟
       stop_cpu_ = boost::posix_time::microsec_clock::local_time();
     }
     running_ = false;
   }
 }
 
-
+//计算微秒
 float Timer::MicroSeconds() {
   if (!has_run_at_least_once()) {
     LOG(WARNING) << "Timer has never been run before reading time.";
     return 0;
   }
+  //如果正在计时就停止
   if (running()) {
     Stop();
   }
   if (Caffe::mode() == Caffe::GPU) {
 #ifndef CPU_ONLY
+	 //gpu用时
     CUDA_CHECK(cudaEventSynchronize(stop_gpu_));
     CUDA_CHECK(cudaEventElapsedTime(&elapsed_milliseconds_, start_gpu_,
                                     stop_gpu_));
@@ -108,6 +112,7 @@ float Timer::Seconds() {
 void Timer::Init() {
   if (!initted()) {
     if (Caffe::mode() == Caffe::GPU) {
+//创建GPU时钟事件
 #ifndef CPU_ONLY
       CUDA_CHECK(cudaEventCreate(&start_gpu_));
       CUDA_CHECK(cudaEventCreate(&stop_gpu_));
@@ -115,16 +120,17 @@ void Timer::Init() {
       NO_GPU;
 #endif
     }
+	//初始化标志置为true
     initted_ = true;
   }
 }
-
+//cputimer空的构造函数
 CPUTimer::CPUTimer() {
   this->initted_ = true;
   this->running_ = false;
   this->has_run_at_least_once_ = false;
 }
-
+//开始计时
 void CPUTimer::Start() {
   if (!running()) {
     this->start_cpu_ = boost::posix_time::microsec_clock::local_time();

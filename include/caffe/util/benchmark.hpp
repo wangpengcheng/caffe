@@ -13,8 +13,8 @@ class Timer {
   virtual ~Timer();
   virtual void Start();
   virtual void Stop();
-  virtual float MilliSeconds();
-  virtual float MicroSeconds();
+  virtual float MilliSeconds();//毫秒
+  virtual float MicroSeconds();//微秒
   virtual float Seconds();
 
   inline bool initted() { return initted_; }
@@ -22,19 +22,19 @@ class Timer {
   inline bool has_run_at_least_once() { return has_run_at_least_once_; }
 
  protected:
-  void Init();
+  void Init();//初始化计时器
 
-  bool initted_;
-  bool running_;
-  bool has_run_at_least_once_;
+  bool initted_;//是否初始化
+  bool running_;//是否正在运行
+  bool has_run_at_least_once_;//是否最后一次运行
 #ifndef CPU_ONLY
-  cudaEvent_t start_gpu_;
-  cudaEvent_t stop_gpu_;
+  cudaEvent_t start_gpu_; //开始GPU
+  cudaEvent_t stop_gpu_;//停止PU
 #endif
-  boost::posix_time::ptime start_cpu_;
-  boost::posix_time::ptime stop_cpu_;
-  float elapsed_milliseconds_;
-  float elapsed_microseconds_;
+  boost::posix_time::ptime start_cpu_; //boost开始cpu时钟
+  boost::posix_time::ptime stop_cpu_;//boost开始cpu时钟
+  float elapsed_milliseconds_; //毫秒
+  float elapsed_microseconds_;//微秒
 };
 //cpu时钟
 class CPUTimer : public Timer {
@@ -46,7 +46,7 @@ class CPUTimer : public Timer {
   virtual float MilliSeconds();
   virtual float MicroSeconds();
 };
-
+//这个类主要是为了方便计时
 }  // namespace caffe
-
+//
 #endif   // CAFFE_UTIL_BENCHMARK_H_

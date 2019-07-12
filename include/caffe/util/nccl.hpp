@@ -6,6 +6,7 @@
 
 #include "caffe/common.hpp"
 
+//定义nccl check
 #define NCCL_CHECK(condition) \
 { \
   ncclResult_t result = condition; \
@@ -19,8 +20,10 @@ namespace nccl {
 
 template <typename Dtype> class dataType;
 
+//定义数据类型模板类 float和double的类型
 template<> class dataType<float> {
  public:
+	 //nccl类型
   static const ncclDataType_t type = ncclFloat;
 };
 template<> class dataType<double> {

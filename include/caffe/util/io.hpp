@@ -11,7 +11,7 @@
 #include "caffe/common.hpp"
 #include "caffe/proto/caffe.pb.h"
 #include "caffe/util/format.hpp"
-
+//定义零食文件夹
 #ifndef CAFFE_TMP_DIR_RETRIES
 #define CAFFE_TMP_DIR_RETRIES 100
 #endif
@@ -21,13 +21,15 @@ namespace caffe {
 using ::google::protobuf::Message;
 using ::boost::filesystem::path;
 
+//创建临时文件夹
 inline void MakeTempDir(string* temp_dirname) {
   temp_dirname->clear();
-  const path& model =
-    boost::filesystem::temp_directory_path()/"caffe_test.%%%%-%%%%";
+  const path& model = boost::filesystem::temp_directory_path()/"caffe_test.%%%%-%%%%";
   for ( int i = 0; i < CAFFE_TMP_DIR_RETRIES; i++ ) {
-    const path& dir = boost::filesystem::unique_path(model).string();
-    bool done = boost::filesystem::create_directory(dir);
+	//获取文件夹的最终路径
+	  const path& dir = boost::filesystem::unique_path(model).string();
+    //创建文件夹
+	  bool done = boost::filesystem::create_directory(dir);
     if ( done ) {
       *temp_dirname = dir.string();
       return;
@@ -35,7 +37,7 @@ inline void MakeTempDir(string* temp_dirname) {
   }
   LOG(FATAL) << "Failed to create a temporary directory.";
 }
-
+//创建零食文件名称
 inline void MakeTempFilename(string* temp_filename) {
   static path temp_files_subpath;
   static uint64_t next_temp_file = 0;
@@ -45,10 +47,9 @@ inline void MakeTempFilename(string* temp_filename) {
     MakeTempDir(&path_string);
     temp_files_subpath = path_string;
   }
-  *temp_filename =
-    (temp_files_subpath/caffe::format_int(next_temp_file++, 9)).string();
+  *temp_filename =(temp_files_subpath/caffe::format_int(next_temp_file++, 9)).string();
 }
-
+//从txt中生成protocol文件
 bool ReadProtoFromTextFile(const char* filename, Message* proto);
 
 inline bool ReadProtoFromTextFile(const string& filename, Message* proto) {

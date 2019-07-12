@@ -9,7 +9,7 @@
 namespace caffe { namespace db {
 
 enum Mode { READ, WRITE, NEW };
-//游标指针,主要是来进行db数据的索引
+//游标指针,主要是来进行db数据的索引,即查询工作
 class Cursor {
  public:
   Cursor() { }
@@ -22,7 +22,7 @@ class Cursor {
 
   DISABLE_COPY_AND_ASSIGN(Cursor);
 };
-//事物类，主要用来进行事物的执行
+//事物类，主要用来进行事物的执行，增加工作
 class Transaction {
  public:
   Transaction() { }
@@ -51,5 +51,6 @@ DB* GetDB(const string& backend);
 
 }  // namespace db
 }  // namespace caffe
+//这个类主要是对两类数据，lmdb和leveldb的统一基础类
 
 #endif  // CAFFE_UTIL_DB_HPP

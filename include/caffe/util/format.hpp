@@ -6,7 +6,7 @@
 #include <string>
 
 namespace caffe {
-
+//获取数据格式字符串
 inline std::string format_int(int n, int numberOfLeadingZeros = 0 ) {
   std::ostringstream s;
   s << std::setw(numberOfLeadingZeros) << std::setfill('0') << n;

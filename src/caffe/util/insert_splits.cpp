@@ -11,7 +11,9 @@ namespace caffe {
 
 void InsertSplits(const NetParameter& param, NetParameter* param_split) {
   // Initialize by copying from the input NetParameter.
+	//通过输入的参数来，进行初始化
   param_split->CopyFrom(param);
+  //清楚原有数据
   param_split->clear_layer();
   map<string, pair<int, int> > blob_name_to_last_top_idx;
   map<pair<int, int>, pair<int, int> > bottom_idx_to_source_top_idx;

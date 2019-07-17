@@ -69,7 +69,7 @@ class LevelDB : public DB {
  private:
   leveldb::DB* db_;
 };
-
+//level数据库接口，与lmdb相似不再解析
 
 }  // namespace db
 }  // namespace caffe

@@ -1301,7 +1301,7 @@ class FillerParameter : public ::google::protobuf::Message {
   static FillerParameter* default_instance_;
 };
 // -------------------------------------------------------------------
-
+//网络相关参数
 class NetParameter : public ::google::protobuf::Message {
  public:
   NetParameter();

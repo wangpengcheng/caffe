@@ -83,12 +83,15 @@ message FillerParameter {
   }
   optional VarianceNorm variance_norm = 8 [default = FAN_IN];
 }
-
+//layer层参数
 message NetParameter {
+	//网络名称
   optional string name = 1; // consider giving the network a name
   // DEPRECATED. See InputParameter. The input blobs to the network.
+  //输入blob
   repeated string input = 3;
   // DEPRECATED. See InputParameter. The shape of the input blobs.
+  //输入形状
   repeated BlobShape input_shape = 8;
 
   // 4D input dimensions -- deprecated.  Use "input_shape" instead.
@@ -100,18 +103,22 @@ message NetParameter {
   // Whether the network will force every layer to carry out backward operation.
   // If set False, then whether to carry out backward is determined
   // automatically according to the net structure and learning rates.
+  //是否反向传播
   optional bool force_backward = 5 [default = false];
   // The current "state" of the network, including the phase, level, and stage.
   // Some layers may be included/excluded depending on this state and the states
   // specified in the layers' include and exclude fields.
+  //net状态
   optional NetState state = 6;
 
   // Print debugging information about results while running Net::Forward,
   // Net::Backward, and Net::Update.
+  //是否输出debug信息
   optional bool debug_info = 7 [default = false];
 
   // The layers that make up the net.  Each of their configurations, including
   // connectivity and behavior, is specified as a LayerParameter.
+  //层的参数
   repeated LayerParameter layer = 100;  // ID 100 so layers are printed last.
 
   // DEPRECATED: use 'layer' instead.

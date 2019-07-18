@@ -42,6 +42,7 @@ void InsertSplits(const NetParameter& param, NetParameter* param_split) {
     }
     // A use of a top blob as a loss should be handled similarly to the use of
     // a top blob as a bottom blob to another layer.
+	//使用顶部blob作为损失应该与使用顶部blob作为底部blob到另一层的方式类似地进行处理。
     const int last_loss =
         std::min(layer_param.loss_weight_size(), layer_param.top_size());
     for (int j = 0; j < last_loss; ++j) {

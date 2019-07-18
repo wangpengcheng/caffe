@@ -1,5 +1,11 @@
 #ifndef _CAFFE_UTIL_IM2COL_HPP_
 #define _CAFFE_UTIL_IM2COL_HPP_
+//主要是实现卷积核的优化
+//参考连接： https://blog.csdn.net/dwyane12138/article/details/78449898
+// https://blog.csdn.net/langb2014/article/details/51546208
+//https://blog.csdn.net/tanmx219/article/details/82848841
+
+
 
 namespace caffe {
 

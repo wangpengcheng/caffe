@@ -353,6 +353,7 @@ message ParamSpec {
 // Update the next available ID when you add a new LayerParameter field.
 //
 // LayerParameter next available layer-specific ID: 149 (last added: clip_param)
+//layer参数
 message LayerParameter {
   optional string name = 1; // the layer name
   optional string type = 2; // the layer type
@@ -360,17 +361,20 @@ message LayerParameter {
   repeated string top = 4; // the name of each top blob
 
   // The train / test phase for computation.
+  //训练和测试时的参数
   optional Phase phase = 10;
 
   // The amount of weight to assign each top blob in the objective.
   // Each layer assigns a default value, usually of either 0 or 1,
   // to each top blob.
+  //loss权重值
   repeated float loss_weight = 5;
 
   // Specifies training parameters (multipliers on global learning constants,
   // and the name and other settings used for weight sharing).
+  //权值共享
   repeated ParamSpec param = 6;
-
+  //blob
   // The blobs containing the numeric parameters of the layer.
   repeated BlobProto blobs = 7;
 
@@ -381,6 +385,7 @@ message LayerParameter {
   // backpropagation to those inputs is skipped.
   //
   // The size must be either 0 or equal to the number of bottoms.
+  //是否反向传播
   repeated bool propagate_down = 11;
 
   // Rules controlling whether and when a layer is included in the network,
@@ -396,6 +401,7 @@ message LayerParameter {
   optional TransformationParameter transform_param = 100;
 
   // Parameters shared by loss layers.
+  //loss的权值共享参数
   optional LossParameter loss_param = 101;
 
   // Layer type-specific parameters.
@@ -404,6 +410,7 @@ message LayerParameter {
   // for their implementation. These layers include an Engine type and
   // engine parameter for selecting the implementation.
   // The default for the engine is set by the ENGINE switch at compile-time.
+  //其它额外的相关参数
   optional AccuracyParameter accuracy_param = 102;
   optional ArgMaxParameter argmax_param = 103;
   optional BatchNormParameter batch_norm_param = 139;

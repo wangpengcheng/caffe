@@ -33,7 +33,7 @@
 #ifdef WITH_PYTHON_LAYER
 #include "caffe/layers/python_layer.hpp"
 #endif
-
+//主要是注册和创建各种layer类
 namespace caffe {
 
 // Get convolution layer according to engine.

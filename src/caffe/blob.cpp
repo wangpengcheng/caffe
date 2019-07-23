@@ -60,7 +60,7 @@ void Blob<Dtype>::Reshape(const BlobShape& shape) {
   }
   Reshape(shape_vec);
 }
-
+//将维度设置成和其它blob相同
 template <typename Dtype>
 void Blob<Dtype>::ReshapeLike(const Blob<Dtype>& other) {
   Reshape(other.shape());

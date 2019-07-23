@@ -21,20 +21,24 @@ namespace caffe {
  *   -# @f$ (N \times C \times H \times W) @f$
  *      the computed outputs @f$ y = |x| @f$
  */
+//abs绝对值层
 template <typename Dtype>
 class AbsValLayer : public NeuronLayer<Dtype> {
  public:
   explicit AbsValLayer(const LayerParameter& param)
       : NeuronLayer<Dtype>(param) {}
+      //初始化Layer
   virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top);
-
+    //设置layer类型
   virtual inline const char* type() const { return "AbsVal"; }
+  //更改Blob数量
   virtual inline int ExactNumBottomBlobs() const { return 1; }
   virtual inline int ExactNumTopBlobs() const { return 1; }
 
  protected:
   /// @copydoc AbsValLayer
+  //前向计算
   virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top);
   virtual void Forward_gpu(const vector<Blob<Dtype>*>& bottom,
@@ -42,7 +46,7 @@ class AbsValLayer : public NeuronLayer<Dtype> {
 
   /**
    * @brief Computes the error gradient w.r.t. the absolute value inputs.
-   *
+   *    //计算误差梯度
    * @param top output Blob vector (length 1), providing the error gradient with
    *      respect to the outputs
    *   -# @f$ (N \times C \times H \times W) @f$
@@ -57,6 +61,7 @@ class AbsValLayer : public NeuronLayer<Dtype> {
    *            \mathrm{sign}(x) \frac{\partial E}{\partial y}
    *      @f$ if propagate_down[0]
    */
+   //后向计算
   virtual void Backward_cpu(const vector<Blob<Dtype>*>& top,
       const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
   virtual void Backward_gpu(const vector<Blob<Dtype>*>& top,

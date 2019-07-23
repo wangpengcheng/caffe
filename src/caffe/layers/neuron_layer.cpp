@@ -7,6 +7,7 @@ namespace caffe {
 template <typename Dtype>
 void NeuronLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top) {
+        //将top的数量设置成和buttom相同
   top[0]->ReshapeLike(*bottom[0]);
 }
 

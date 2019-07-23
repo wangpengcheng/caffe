@@ -9,7 +9,8 @@
 // Stub out GPU calls as unavailable.
 //定义无GPU输出状况
 #define NO_GPU LOG(FATAL) << "Cannot use GPU in CPU-only Caffe: check mode."
-//定义设置使用GPU向前和向后计算的时候重载函数输出错误警告信息,这个一般由具体的实现类进行重载
+//定义设置使用GPU向前和向后计算
+
 #define STUB_GPU(classname) \
 template <typename Dtype> \
 void classname<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom, \

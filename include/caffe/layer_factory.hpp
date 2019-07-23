@@ -35,7 +35,7 @@
  *
  * Note that each layer type should only be registered once.
  */
-
+//layer的工厂模式类
 #ifndef CAFFE_LAYER_FACTORY_H_
 #define CAFFE_LAYER_FACTORY_H_
 
@@ -51,38 +51,47 @@ namespace caffe {
 
 template <typename Dtype>
 class Layer;
-
+//layer注册工厂类
 template <typename Dtype>
 class LayerRegistry {
  public:
+  //定义函数指针，输入layerParameter输出layer的共享指针
   typedef shared_ptr<Layer<Dtype> > (*Creator)(const LayerParameter&);
+  //map映射将字符串映射到Creator上
   typedef std::map<string, Creator> CreatorRegistry;
-
+  //静态注册函数，主要是返回CreatorRegistry
   static CreatorRegistry& Registry() {
     static CreatorRegistry* g_registry_ = new CreatorRegistry();
     return *g_registry_;
   }
 
+//添加注册函数
   // Adds a creator.
   static void AddCreator(const string& type, Creator creator) {
     CreatorRegistry& registry = Registry();
+    //检查是否已经存在过
     CHECK_EQ(registry.count(type), 0)
         << "Layer type " << type << " already registered.";
     registry[type] = creator;
   }
 
   // Get a layer using a LayerParameter.
+  //创建layer类的静态函数
   static shared_ptr<Layer<Dtype> > CreateLayer(const LayerParameter& param) {
     if (Caffe::root_solver()) {
       LOG(INFO) << "Creating layer " << param.name();
     }
+    //获取layer类型
     const string& type = param.type();
+    //获取注册句柄
     CreatorRegistry& registry = Registry();
+    //输出信息
     CHECK_EQ(registry.count(type), 1) << "Unknown layer type: " << type
         << " (known types: " << LayerTypeListString() << ")";
+    //返回layer
     return registry[type](param);
   }
-
+//已经注册的layer列表
   static vector<string> LayerTypeList() {
     CreatorRegistry& registry = Registry();
     vector<string> layer_types;
@@ -97,7 +106,7 @@ class LayerRegistry {
   // Layer registry should never be instantiated - everything is done with its
   // static variables.
   LayerRegistry() {}
-
+  //将所有的类型转换为字符串
   static string LayerTypeListString() {
     vector<string> layer_types = LayerTypeList();
     string layer_types_str;
@@ -111,8 +120,7 @@ class LayerRegistry {
     return layer_types_str;
   }
 };
-
-
+//模板注册器类
 template <typename Dtype>
 class LayerRegisterer {
  public:
@@ -122,12 +130,12 @@ class LayerRegisterer {
     LayerRegistry<Dtype>::AddCreator(type, creator);
   }
 };
-
+//使用define模板
 
 #define REGISTER_LAYER_CREATOR(type, creator)                                  \
   static LayerRegisterer<float> g_creator_f_##type(#type, creator<float>);     \
   static LayerRegisterer<double> g_creator_d_##type(#type, creator<double>)    \
-
+//创建相关类
 #define REGISTER_LAYER_CLASS(type)                                             \
   template <typename Dtype>                                                    \
   shared_ptr<Layer<Dtype> > Creator_##type##Layer(const LayerParameter& param) \
@@ -137,5 +145,5 @@ class LayerRegisterer {
   REGISTER_LAYER_CREATOR(type, Creator_##type##Layer)
 
 }  // namespace caffe
-
+//这个文件主要是使用工厂模式，可以自由的选择和添加类
 #endif  // CAFFE_LAYER_FACTORY_H_

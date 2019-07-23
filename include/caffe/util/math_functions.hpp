@@ -90,7 +90,7 @@ void caffe_add_scalar(const int N, const Dtype alpha, Dtype *X);
 //
 template <typename Dtype>
 void caffe_scal(const int N, const Dtype alpha, Dtype *X);
-
+//
 template <typename Dtype>
 void caffe_sqr(const int N, const Dtype* a, Dtype* y);
 
@@ -102,7 +102,7 @@ void caffe_add(const int N, const Dtype* a, const Dtype* b, Dtype* y);
 
 template <typename Dtype>
 void caffe_sub(const int N, const Dtype* a, const Dtype* b, Dtype* y);
-
+//除法
 template <typename Dtype>
 void caffe_mul(const int N, const Dtype* a, const Dtype* b, Dtype* y);
 

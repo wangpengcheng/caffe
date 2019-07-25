@@ -7,6 +7,7 @@
 
 namespace caffe {
 
+//参数初始化函数
 template <typename Dtype>
 void AccuracyLayer<Dtype>::LayerSetUp(
   const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top) {
@@ -18,16 +19,31 @@ void AccuracyLayer<Dtype>::LayerSetUp(
     ignore_label_ = this->layer_param_.accuracy_param().ignore_label();
   }
 }
-
+//注意这里的reshape函数
 template <typename Dtype>
 void AccuracyLayer<Dtype>::Reshape(
   const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top) {
+    //bottom[0]是前一层的输入 bottom[1]是label的输入,两者的商就是分类的映射总数
   CHECK_LE(top_k_, bottom[0]->count() / bottom[1]->count())
       << "top_k must be less than or equal to the number of classes.";
+      //计算标签维度
   label_axis_ =
       bottom[0]->CanonicalAxisIndex(this->layer_param_.accuracy_param().axis());
+//上面的check表示的意思为： 
+//先结合上图理解outer_num与inner_num的数量，以及bottom[1]的结构。 
+//如果C表示的是预测的种类的数量（就是label有多少种），那么label的数量有多少? 
+//就是N*H*W，一个输入是H*W大，对于H*W的每个元素都有一个label值，所以，一个输入就会有H*W个label， 
+//N个输入（一批），就会有N*H*W个label数量。 
+//很多网络最后一层都是全连接层，即一张h*w的图片进去，到最后就成为了一列单个的元素，N张图进去就是变成N列（计算上来说）， 
+//所以一般输入给accuracy层的bottom[0]都是N*C*1*1. 
+//对于分类来说，这个特别好理解，每张图片对应一个label，那么就会有N个label
+
+  //如果默认的情况就是label_axis_ = 1，outer_num_ = N；inner_num_ = W*H
+  //输出数目为0到指定维度的数目
   outer_num_ = bottom[0]->count(0, label_axis_);
+  //内部数目为剩下的维度数据
   inner_num_ = bottom[0]->count(label_axis_ + 1);
+  //确认输入维度与输出分类是否相同，注意这里忽略了c的数据
   CHECK_EQ(outer_num_ * inner_num_, bottom[1]->count())
       << "Number of labels must match number of predictions; "
       << "e.g., if label axis == 1 and prediction shape is (N, C, H, W), "
@@ -35,37 +51,57 @@ void AccuracyLayer<Dtype>::Reshape(
       << "with integer values in {0, 1, ..., C-1}.";
   vector<int> top_shape(0);  // Accuracy is a scalar; 0 axes.
   top[0]->Reshape(top_shape);
+  //如果有两个top
   if (top.size() > 1) {
     // Per-class accuracy is a vector; 1 axes.
+    //对预分类的维度进行改变,这里主要是为了方便后面对维度进行映射
     vector<int> top_shape_per_class(1);
+    //默认为1的情况下，top_shape_per_class=C
     top_shape_per_class[0] = bottom[0]->shape(label_axis_);
+    //重新设置第二个blob维度
     top[1]->Reshape(top_shape_per_class);
+    //设置计数缓冲维度
     nums_buffer_.Reshape(top_shape_per_class);
   }
 }
-
+//前向计算函数
 template <typename Dtype>
-void AccuracyLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
-    const vector<Blob<Dtype>*>& top) {
+void AccuracyLayer<Dtype>::Forward_cpu(
+    const vector<Blob<Dtype>*>& bottom,
+    const vector<Blob<Dtype>*>& top
+    ) {
+  //初始化准确率
   Dtype accuracy = 0;
+  //获取数据
   const Dtype* bottom_data = bottom[0]->cpu_data();
+  //获取data
   const Dtype* bottom_label = bottom[1]->cpu_data();
+  //计算维度dim=N*C*H*W/N= C*H*W
   const int dim = bottom[0]->count() / outer_num_;
+  //计算标签数量默认是C
   const int num_labels = bottom[0]->shape(label_axis_);
+  //检查top blob数量
   if (top.size() > 1) {
+    //开始为nums_buffer_分配内存
     caffe_set(nums_buffer_.count(), Dtype(0), nums_buffer_.mutable_cpu_data());
+    //设置第二个top blob分配内存
     caffe_set(top[1]->count(), Dtype(0), top[1]->mutable_cpu_data());
   }
   int count = 0;
-  for (int i = 0; i < outer_num_; ++i) {
-    for (int j = 0; j < inner_num_; ++j) {
-      const int label_value =
-          static_cast<int>(bottom_label[i * inner_num_ + j]);
+  //遍历输入维度
+  for (int i = 0; i < outer_num_; ++i) {//遍历n
+    for (int j = 0; j < inner_num_; ++j) {//遍历wh
+      //获取临时标签值
+      const int label_value =static_cast<int>(bottom_label[i * inner_num_ + j]);
+      //检查是否将该标签忽略
       if (has_ignore_label_ && label_value == ignore_label_) {
         continue;
       }
+      //检查标签值是否为0
       DCHECK_GE(label_value, 0);
+      //检查是否大于标签总数
       DCHECK_LT(label_value, num_labels);
+      //如果两个top
       if (top.size() > 1) ++nums_buffer_.mutable_cpu_data()[label_value];
       const Dtype prob_of_true_class = bottom_data[i * dim
                                                    + label_value * inner_num_

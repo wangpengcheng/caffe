@@ -14,6 +14,9 @@ namespace caffe {
 /**
  * @brief Computes the classification accuracy for a one-of-many
  *        classification task.
+ * 从分类任务中计算分类的准确度
+ * AccuracyLayer 只能计算准确率，不需要也不能后向传播。
+ * 当只有一个top时，会记录一个总的分类准确率，当有两个top时，另一个top会记录每一类各自的准确率。
  */
 template <typename Dtype>
 class AccuracyLayer : public Layer<Dtype> {
@@ -38,6 +41,7 @@ class AccuracyLayer : public Layer<Dtype> {
 
   // If there are two top blobs, then the second blob will contain
   // accuracies per class.
+  //如果这里有两个top blob，第二个blob会包含 每个类的准确率
   virtual inline int MinTopBlobs() const { return 1; }
   virtual inline int MaxTopBlobs() const { return 2; }
 
@@ -87,10 +91,13 @@ class AccuracyLayer : public Layer<Dtype> {
   int top_k_;
 
   /// Whether to ignore instances with a certain label.
+  //是否开启距离label
   bool has_ignore_label_;
   /// The label indicating that an instance should be ignored.
+  //忽略的距离上线
   int ignore_label_;
   /// Keeps counts of the number of samples per class.
+  //对每个类别的准确率buffer
   Blob<Dtype> nums_buffer_;
 };
 

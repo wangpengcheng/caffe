@@ -85,11 +85,11 @@ class AccuracyLayer : public Layer<Dtype> {
   }
   virtual void Backward_gpu(const vector<Blob<Dtype>*>& top,
       const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
-
+    //标签维度，外部计数，内部计数
   int label_axis_, outer_num_, inner_num_;
-
+    //之将值最高的几个标签进行计算
   int top_k_;
-
+    //https://blog.csdn.net/Scythe666/article/details/78790648
   /// Whether to ignore instances with a certain label.
   //是否开启距离label
   bool has_ignore_label_;

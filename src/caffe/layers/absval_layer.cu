@@ -27,6 +27,8 @@ void AbsValLayer<Dtype>::Backward_gpu(const vector<Blob<Dtype>*>& top,
     Dtype* bottom_diff = bottom[0]->mutable_gpu_diff();
     //将给予bottom 差值初始化
     caffe_gpu_sign(count, bottom_data, bottom_diff);
+    //将关于top_diff乘以当前层bottom_diff中每个数据的符号,bottom的diff变为原来的绝对值
+    //bottom_diff*=top_diff
     caffe_gpu_mul(count, bottom_diff, top_diff, bottom_diff);
   }
 }

@@ -306,7 +306,9 @@ class Blob {
   shared_ptr<SyncedMemory> diff_;//向后传播数据
   shared_ptr<SyncedMemory> shape_data_;//旧形状数据
   vector<int> shape_;//新形状数据，维度向量，一般是4个
-  int count_;//所有维度相乘，即数据的总的个数
+  int 
+  
+  _;//所有维度相乘，即数据的总的个数
   int capacity_;//旧容量
 
   DISABLE_COPY_AND_ASSIGN(Blob);//禁止拷贝和拥有

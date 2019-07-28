@@ -74,7 +74,7 @@ void AccuracyLayer<Dtype>::Forward_cpu(
   Dtype accuracy = 0;
   //获取数据
   const Dtype* bottom_data = bottom[0]->cpu_data();
-  //获取data
+  //获取label
   const Dtype* bottom_label = bottom[1]->cpu_data();
   //计算维度dim=N*C*H*W/N= C*H*W
   const int dim = bottom[0]->count() / outer_num_;
@@ -88,7 +88,7 @@ void AccuracyLayer<Dtype>::Forward_cpu(
     caffe_set(top[1]->count(), Dtype(0), top[1]->mutable_cpu_data());
   }
   int count = 0;
-  //遍历输入维度
+  //遍历输入维度，注意这里是循环遍历每一个映射维度的映射关系，得到标签的准确度
   for (int i = 0; i < outer_num_; ++i) {//遍历n
     for (int j = 0; j < inner_num_; ++j) {//遍历wh
       //获取临时标签值
@@ -101,33 +101,44 @@ void AccuracyLayer<Dtype>::Forward_cpu(
       DCHECK_GE(label_value, 0);
       //检查是否大于标签总数
       DCHECK_LT(label_value, num_labels);
-      //如果两个top
+      //如果两个top就将记录data中的标签分类中，即属于label的数量++
+       // 记录每个类别的图像总数
       if (top.size() > 1) ++nums_buffer_.mutable_cpu_data()[label_value];
-      const Dtype prob_of_true_class = bottom_data[i * dim
-                                                   + label_value * inner_num_
-                                                   + j];
+      //获取输入数据对于正确标签的预测概率
+      const Dtype prob_of_true_class = bottom_data[i * dim+ label_value * inner_num_+ j];
+      //统计正确分类的数量
+
       int num_better_predictions = -1;  // true_class also counts as "better"
-      // Top-k accuracy
+      // Top-k accuracy 
+      // top_k为取前k个最高评分（的预测标签）;这里是直接进行比较，不再排序
+      //对于顶部的top_k个数据进行正确分类的统计
       for (int k = 0; k < num_labels && num_better_predictions < top_k_; ++k) {
-        num_better_predictions +=
-          (bottom_data[i * dim + k * inner_num_ + j] >= prob_of_true_class);
+        //查看大于prob_of_true_class的有多少
+        //注意这里是对所有标签中的属于label_value，进行统计分类i*dim 是层，k*inner_num_是k*w*h,j是最终确定的值
+        num_better_predictions +=(bottom_data[i * dim + k * inner_num_ + j] >= prob_of_true_class);
       }
       // check if there are less than top_k_ predictions
+      //确认是否小于top_k_，即并不是每一个都大于prob_of_true_class
       if (num_better_predictions < top_k_) {
+        //增加准确率,即验证正确的数量
         ++accuracy;
+        //输出该类图像数量++
         if (top.size() > 1) ++top[1]->mutable_cpu_data()[label_value];
       }
+      //增加计数，记录总的数量
       ++count;
     }
   }
 
   // LOG(INFO) << "Accuracy: " << accuracy;
+  //输出准确度，注意这里是统计的总的准确度
   top[0]->mutable_cpu_data()[0] = (count == 0) ? 0 : (accuracy / count);
   if (top.size() > 1) {
+    //循环获取每个类的准确度
     for (int i = 0; i < top[1]->count(); ++i) {
-      top[1]->mutable_cpu_data()[i] =
-          nums_buffer_.cpu_data()[i] == 0 ? 0
-          : top[1]->cpu_data()[i] / nums_buffer_.cpu_data()[i];
+      //注意；top[1]是正确分类正确的数量，nums_buffer_是可能为这类图像的总数
+
+      top[1]->mutable_cpu_data()[i] =nums_buffer_.cpu_data()[i] == 0 ? 0: top[1]->cpu_data()[i] / nums_buffer_.cpu_data()[i];
     }
   }
   // Accuracy layer should not be used as a loss function.
@@ -139,5 +150,6 @@ STUB_GPU(AccuracyLayer);
 
 INSTANTIATE_CLASS(AccuracyLayer);
 REGISTER_LAYER_CLASS(Accuracy);
+//注意：cpu模式一label为主进行映射并，计算准确率，GPU是输入data为主
 
 }  // namespace caffe

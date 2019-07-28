@@ -19,6 +19,7 @@ namespace caffe {
  * along which to maximise.
  *
  * NOTE: does not implement Backwards operation.
+ * 算所有维度上每个数据的K max值的索引（C * H * W）
  */
 template <typename Dtype>
 class ArgMaxLayer : public Layer<Dtype> {
@@ -34,6 +35,10 @@ class ArgMaxLayer : public Layer<Dtype> {
    *   - axis (\b optional int).
    *     if set, maximise along the specified axis else maximise the flattened
    *     trailing dimensions for each index of the first / num dimension.
+   * 
+   * top_k 最大元素输出的k的数目
+   * out_max_val（可选bool） 如果设置，则输出对的向量（max_ind，max_val），除非设置了轴，然后沿指定的轴输出max_val。
+   * axis（可选int）。 如果设置，则沿指定轴最大化，否则最大化第一个/ num维的每个索引的展平尾随尺寸。
    */
   explicit ArgMaxLayer(const LayerParameter& param)
       : Layer<Dtype>(param) {}
@@ -66,10 +71,10 @@ class ArgMaxLayer : public Layer<Dtype> {
       const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {
     NOT_IMPLEMENTED;
   }
-  bool out_max_val_;
-  size_t top_k_;
-  bool has_axis_;
-  int axis_;
+  bool out_max_val_; //是否按照维度向量映射输出
+  size_t top_k_;//最大元素输出数目top_k
+  bool has_axis_;//是否有维度
+  int axis_;//维度数目
 };
 
 }  // namespace caffe

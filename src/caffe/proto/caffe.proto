@@ -27,7 +27,7 @@ message BlobProto {
   repeated double double_diff = 9 [packed = true];//双精度误差
 
   // 4D dimensions -- deprecated.  Use "shape" instead.
-  // 4D维度，已经弃用，用形状代替
+  // 4D维度，已经弃用，用BlobShape代替
   optional int32 num = 1 [default = 0];//数量
   optional int32 channels = 2 [default = 0]; //通道数目
   optional int32 height = 3 [default = 0];//高度

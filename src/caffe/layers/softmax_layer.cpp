@@ -57,7 +57,7 @@ void SoftmaxLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       }
     }
     // subtraction
-    //矩阵乘法
+    //矩阵乘法；这里实质上是执行了一次矩阵减法，减去了最大值
     caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, channels, inner_num_,
         1, -1., sum_multiplier_.cpu_data(), scale_data, 1., top_data);
     // exponentiation
@@ -71,34 +71,67 @@ void SoftmaxLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
     for (int j = 0; j < channels; j++) {
       //分块矩阵除法；结果保存在top_data中
       caffe_div(inner_num_, top_data, scale_data, top_data);
+      //更新top_data步长
       top_data += inner_num_;
     }
   }
 }
-
+//反向回调函数
 template <typename Dtype>
-void SoftmaxLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
-    const vector<bool>& propagate_down,
-    const vector<Blob<Dtype>*>& bottom) {
+void SoftmaxLayer<Dtype>::Backward_cpu(
+    const vector<Blob<Dtype>*>& top,
+    const vector<bool>& propagate_down,//是否参与反向计算
+    const vector<Blob<Dtype>*>& bottom
+    ) {
+  //top误差数据
   const Dtype* top_diff = top[0]->cpu_diff();
+  //top_data
   const Dtype* top_data = top[0]->cpu_data();
   Dtype* bottom_diff = bottom[0]->mutable_cpu_diff();
+  //中间缩放计算数据
   Dtype* scale_data = scale_.mutable_cpu_data();
+  //获取通道数目
   int channels = top[0]->shape(softmax_axis_);
+  //计算比较范围和维度
   int dim = top[0]->count() / outer_num_;
+  //进行内存拷贝
   caffe_copy(top[0]->count(), top_diff, bottom_diff);
+  //开始遍历，寻找相关值
   for (int i = 0; i < outer_num_; ++i) {
     // compute dot(top_diff, top_data) and subtract them from the bottom diff
+    //top_diff=
     for (int k = 0; k < inner_num_; ++k) {
-      scale_data[k] = caffe_cpu_strided_dot<Dtype>(channels,
-          bottom_diff + i * dim + k, inner_num_,
-          top_data + i * dim + k, inner_num_);
+      //计算向量的内积,按照inner_num作为维度进行计算
+      //scale_data_i=bottom_diff_i*top_data_i;
+      scale_data[k] = caffe_cpu_strided_dot<Dtype>(
+        channels,
+        bottom_diff + i * dim + k, 
+        inner_num_,
+        top_data + i * dim + k, 
+        inner_num_
+        );
     }
     // subtraction
-    caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, channels, inner_num_, 1,
-        -1., sum_multiplier_.cpu_data(), scale_data, 1., bottom_diff + i * dim);
+    //进行矩阵的乘法:C = alpha*op( A )*op( B ) + beta*C
+    //即：bottom_diff=-1*sum_multiplier_*scale_data+bottom_diff
+    //一般的初始值bottom_diff为1
+    //即：bottom_diff=bottom_diff_-bottom_diff_xtop_data_=bottom_diff(1-top_data);
+    caffe_cpu_gemm<Dtype>(
+      CblasNoTrans, 
+      CblasNoTrans, 
+      channels, //m
+      inner_num_, //n
+      1,//k;sum_mulitiplier是一列矩阵
+      -1., //alpha
+      sum_multiplier_.cpu_data(),//矩阵a 
+      scale_data, //矩阵b
+      1., //beta
+      bottom_diff + i * dim //系数c
+      );
   }
   // elementwise multiplication
+  //计算乘积：
+  //bottom_diff=top_datax(top_diff-top_data*top_diff);
   caffe_mul(top[0]->count(), bottom_diff, top_data, bottom_diff);
 }
 

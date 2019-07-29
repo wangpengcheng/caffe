@@ -50,6 +50,7 @@ void SoftmaxLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
     // initialize scale_data to the first plane
     caffe_copy(inner_num_, bottom_data + i * dim, scale_data);
     //求取范围内的最大值
+    //计算最大值max，scale_data为保存最大值的变量
     for (int j = 0; j < channels; j++) {
       for (int k = 0; k < inner_num_; k++) {
         scale_data[k] = std::max(scale_data[k],
@@ -58,16 +59,20 @@ void SoftmaxLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
     }
     // subtraction
     //矩阵乘法；这里实质上是执行了一次矩阵减法，减去了最大值
+    //每个输入Zi均减去最大值max
     caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, channels, inner_num_,
         1, -1., sum_multiplier_.cpu_data(), scale_data, 1., top_data);
     // exponentiation
     //指数化
+    //求e^(Zi-max)
     caffe_exp<Dtype>(dim, top_data, top_data);
     // sum after exp
     //进行指数求和结果保存在scale_data中
+    //求和，计算e^(Zi-max),i=[0,n]之和
     caffe_cpu_gemv<Dtype>(CblasTrans, channels, inner_num_, 1.,
         top_data, sum_multiplier_.cpu_data(), 0., scale_data);
     // division
+    //每一个指数e^(Zi-max)除以上一步求得的最大值
     for (int j = 0; j < channels; j++) {
       //分块矩阵除法；结果保存在top_data中
       caffe_div(inner_num_, top_data, scale_data, top_data);
@@ -131,7 +136,7 @@ void SoftmaxLayer<Dtype>::Backward_cpu(
   }
   // elementwise multiplication
   //计算乘积：
-  //bottom_diff=top_datax(top_diff-top_data*top_diff);
+  //bottom_diff=top_data_x(top_diff-top_data*top_diff);
   caffe_mul(top[0]->count(), bottom_diff, top_data, bottom_diff);
 }
 

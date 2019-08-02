@@ -1,4 +1,4 @@
-#ifndef CAFFE_SOFTMAX_LAYER_HPP_
+﻿#ifndef CAFFE_SOFTMAX_LAYER_HPP_
 #define CAFFE_SOFTMAX_LAYER_HPP_
 
 #include <vector>
@@ -21,8 +21,7 @@ namespace caffe {
 template <typename Dtype>
 class SoftmaxLayer : public Layer<Dtype> {
  public:
-  explicit SoftmaxLayer(const LayerParameter& param)
-      : Layer<Dtype>(param) {}
+  explicit SoftmaxLayer(const LayerParameter& param):Layer<Dtype>(param) {}
   virtual void Reshape(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top);
 

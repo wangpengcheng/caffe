@@ -1,4 +1,4 @@
-#ifndef CAFFE_ABSVAL_LAYER_HPP_
+﻿#ifndef CAFFE_ABSVAL_LAYER_HPP_
 #define CAFFE_ABSVAL_LAYER_HPP_
 
 #include <vector>
@@ -8,6 +8,8 @@
 #include "caffe/proto/caffe.pb.h"
 
 #include "caffe/layers/neuron_layer.hpp"
+
+
 
 namespace caffe {
 

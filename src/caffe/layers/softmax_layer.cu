@@ -1,4 +1,4 @@
-#include <algorithm>
+﻿#include <algorithm>
 #include <cfloat>
 #include <vector>
 
@@ -8,21 +8,33 @@
 #include "caffe/util/math_functions.hpp"
 
 namespace caffe {
-
+//这个是GPU版本的softmax函数
 template <typename Dtype>
-__global__ void kernel_channel_max(const int num, const int channels,
-    const int spatial_dim, const Dtype* data, Dtype* out) {
+__global__ void kernel_channel_max(
+        const int num, //数量
+        const int channels,//通道数目
+        const int spatial_dim,//步长矩阵
+        const Dtype* data,//输入数据指针
+        Dtype* out//输出数据指针
+        ) {
+    //for循环的预定义define,包含线程索引和总线程数，因此对比cpp少了一层for循环
+    //注意这里的标准维度
   CUDA_KERNEL_LOOP(index, num * spatial_dim) {
-    int n = index / spatial_dim;
-    int s = index % spatial_dim;
+    //计算当前数据索引行
+      int n = index / spatial_dim;
+        //进一步的数据维度
+      int s = index % spatial_dim;
+      //定义最大浮点数负值
     Dtype maxval = -FLT_MAX;
+    //根据通道数目进行最大数据统计
     for (int c = 0; c < channels; ++c) {
       maxval = max(data[(n * channels + c) * spatial_dim + s], maxval);
     }
+    //输出的index数据为最大值
     out[index] = maxval;
   }
 }
-
+//求相反值
 template <typename Dtype>
 __global__ void kernel_channel_subtract(const int count,
     const int num, const int channels,
@@ -33,14 +45,14 @@ __global__ void kernel_channel_subtract(const int count,
     data[index] -= channel_max[n * spatial_dim + s];
   }
 }
-
+//求自然指数函数值
 template <typename Dtype>
 __global__ void kernel_exp(const int count, const Dtype* data, Dtype* out) {
   CUDA_KERNEL_LOOP(index, count) {
     out[index] = exp(data[index]);
   }
 }
-
+//求取和值，注意这里的三通道合一
 template <typename Dtype>
 __global__ void kernel_channel_sum(const int num, const int channels,
     const int spatial_dim, const Dtype* data, Dtype* channel_sum) {
@@ -54,7 +66,7 @@ __global__ void kernel_channel_sum(const int num, const int channels,
     channel_sum[index] = sum;
   }
 }
-
+//求取微分
 template <typename Dtype>
 __global__ void kernel_channel_div(const int count,
     const int num, const int channels,
@@ -65,7 +77,7 @@ __global__ void kernel_channel_div(const int count,
     data[index] /= channel_sum[n * spatial_dim + s];
   }
 }
-
+//求点乘
 template <typename Dtype>
 __global__ void kernel_channel_dot(const int num, const int channels,
     const int spatial_dim, const Dtype* data_1, const Dtype* data_2,
@@ -81,7 +93,7 @@ __global__ void kernel_channel_dot(const int num, const int channels,
     channel_dot[index] = dot;
   }
 }
-
+//前向GPU计算
 template <typename Dtype>
 void SoftmaxLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
     const vector<Blob<Dtype>*>& top) {
@@ -90,6 +102,7 @@ void SoftmaxLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
   Dtype* scale_data = scale_.mutable_gpu_data();
   int count = bottom[0]->count();
   int channels = top[0]->shape(softmax_axis_);
+  //先初始化top_data为bottom_data
   caffe_copy(count, bottom_data, top_data);
   // We need to subtract the max to avoid numerical issues, compute the exp,
   // and then normalize.

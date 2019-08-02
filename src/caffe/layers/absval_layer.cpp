@@ -1,7 +1,8 @@
-#include <vector>
+﻿#include <vector>
 
 #include "caffe/layers/absval_layer.hpp"
 #include "caffe/util/math_functions.hpp"
+#include "include/caffe/"
 
 namespace caffe {
 //初始化函数

@@ -30,19 +30,17 @@ extern "C" {
 //表格如下 y [i] = sqrt（a [i]）
 
 //预定义 类模板 
+//连接函数名称，定义基本操作运算, 输入数量，参数a,结果y
 #define DEFINE_VSL_UNARY_FUNC(name, operation) \
   template<typename Dtype> \
-  //连接函数名称，定义基本操作运算, 输入数量，参数a,结果y
   void v##name(const int n, const Dtype* a, Dtype* y) { \
-    CHECK_GT(n, 0); CHECK(a); CHECK(y); \ //检查输入参数
-    for (int i = 0; i < n; ++i) { operation; } \ //对输入数组进行相关操作
+    CHECK_GT(n, 0); CHECK(a); CHECK(y); \
+    for (int i = 0; i < n; ++i) { operation; } \
   } \
-  //添加单精度模板，
   inline void vs##name( \
     const int n, const float* a, float* y) { \
     v##name<float>(n, a, y); \
   } \
-  //添加双精度模板
   inline void vd##name( \
       const int n, const double* a, double* y) { \
     v##name<double>(n, a, y); \

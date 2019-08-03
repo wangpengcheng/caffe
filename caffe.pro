@@ -432,6 +432,68 @@ INCLUDEPATH = \
     $$PWD/include/caffe/util \
     $$PWD/include \
     $$PWD/src/gtest
+#set opencv
+OPENCV_INCLUDE_PATH=/usr/local/include
+INCLUDEPATH += $$OPENCV_INCLUDE_PATH/opencv \
+               $$$OPENCV_INCLUDE_PATH/opencv2
+OPENCV_LIB_PATH=/usr/local/lib
+LIBS+= -L $$OPENCV_LIB_PATH
+LIBS+= \
+     -lopencv_aruco.so \
+     -lopencv_bgsegm.so \
+     -lopencv_bioinspired.so \
+     -lopencv_calib3d.so \
+     -lopencv_ccalib.so \
+     -lopencv_core.so \
+     -lopencv_datasets.so \
+     -lopencv_dnn.so \
+     -lopencv_dpm.so \
+     -lopencv_face.so \
+     -lopencv_features2d.so \
+     -lopencv_flann.so \
+     -lopencv_freetype.so \
+     -lopencv_fuzzy.so \
+     -lopencv_highgui.so \
+     -lopencv_imgcodecs.so \
+     -lopencv_imgproc.so \
+     -lopencv_ml.so \
+     -lopencv_objdetect.so \
+     -lopencv_optflow.so \
+     -lopencv_phase_unwrapping.so \
+     -lopencv_photo.so \
+     -lopencv_plot.so \
+     -lopencv_reg.so \
+     -lopencv_rgbd.so \
+     -lopencv_saliency.so \
+     -lopencv_shape.so \
+     -lopencv_stereo.so \
+     -lopencv_stitching.so \
+     -lopencv_structured_light.so \
+     -lopencv_superres.so \
+     -lopencv_surface_matching.so \
+     -lopencv_text.so \
+     -lopencv_tracking.so \
+     -lopencv_video.so \
+     -lopencv_videoio.so \
+     -lopencv_videostab.so \
+     -lopencv_xfeatures2d.so \
+     -lopencv_ximgproc.so \
+     -lopencv_xobjdetect.so \
+     -lopencv_xphoto.so \
+
+#set caffe
+#$CAFFE_PATH=/home/wangpengcheng/caffe/caffe/
+#LIBS += -L $$CAFFE_PATH/build/lib
+#LIBS += -lcaffe
+LIBS += -lglog -lgflags -lprotobuf -lboost_system -lboost_thread -llmdb -lleveldb -lstdc++  -lcblas -latlas -lpthread
+#set cuda
+CUDA_PATH=/usr/local/cuda
+
+INCLUDEPATH += $$CUDA_PATH/include \
+               $$CUDA_PATH/bin
+
+LIBS += -L $$CUDA_PATH/lib64
+LIBS += -lcudart -lcublas -lcurand
 
 #DEFINES = 
 

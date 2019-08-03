@@ -59,7 +59,7 @@ inline bool ReadProtoFromTextFile(const string& filename, Message* proto) {
 inline void ReadProtoFromTextFileOrDie(const char* filename, Message* proto) {
   CHECK(ReadProtoFromTextFile(filename, proto));
 }
-
+//从文件中读取相关参数
 inline void ReadProtoFromTextFileOrDie(const string& filename, Message* proto) {
   ReadProtoFromTextFileOrDie(filename.c_str(), proto);
 }

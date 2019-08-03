@@ -1118,9 +1118,12 @@ void UpgradeSnapshotPrefixProperty(const string& param_file,
 // Read parameters from a file into a SolverParameter proto message.
 void ReadSolverParamsFromTextFileOrDie(const string& param_file,
                                        SolverParameter* param) {
+    //从文件中读取相关参数，如果失败就输出相关参数
   CHECK(ReadProtoFromTextFile(param_file, param))
       << "Failed to parse SolverParameter file: " << param_file;
+  //更新解决的相关参数
   UpgradeSolverAsNeeded(param_file, param);
+  //更新其它参数
   UpgradeSnapshotPrefixProperty(param_file, param);
 }
 

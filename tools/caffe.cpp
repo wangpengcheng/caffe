@@ -184,6 +184,7 @@ int train() {
       && solver_param.has_solver_mode()
       && solver_param.solver_mode() == caffe::SolverParameter_SolverMode_GPU) {
       if (solver_param.has_device_id()) {
+
           FLAGS_gpu = "" +
               boost::lexical_cast<string>(solver_param.device_id());
       } else {  // Set default GPU if unspecified

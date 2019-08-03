@@ -39,6 +39,7 @@ bool ReadProtoFromTextFile(const char* filename, Message* proto) {
   //创建文件输入流
 	FileInputStream* input = new FileInputStream(fd);
   //将文件转化为proto，message
+   //注意这里也是caffe定义的protxt文件使用相同的方式进行的读取，将参数保存在proto中
 	bool success = google::protobuf::TextFormat::Parse(input, proto);
   delete input;
   close(fd);

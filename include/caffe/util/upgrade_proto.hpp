@@ -84,5 +84,5 @@ void ReadSolverParamsFromTextFileOrDie(const string& param_file,
                                        SolverParameter* param);
 
 }  // namespace caffe
-
+//这个头文件的主要目的是为了将旧版的caffe proto改写成为新版的proto
 #endif   // CAFFE_UTIL_UPGRADE_PROTO_H_

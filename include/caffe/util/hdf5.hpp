@@ -36,6 +36,6 @@ int hdf5_get_num_links(hid_t loc_id);
 string hdf5_get_name_by_idx(hid_t loc_id, int idx);
 
 }  // namespace caffe
-//主要是hdf5的数据解码模块
+//
 #endif   // CAFFE_UTIL_HDF5_H_
 #endif   // USE_HDF5

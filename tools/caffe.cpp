@@ -12,8 +12,8 @@ namespace bp = boost::python;
 #include <vector>
 
 #include "boost/algorithm/string.hpp"
-#include "caffe/caffe.hpp"
 #include "caffe/util/signal_handler.h"
+#include "caffe/caffe.hpp"
 
 using caffe::Blob;
 using caffe::Caffe;

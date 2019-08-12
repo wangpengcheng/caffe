@@ -178,7 +178,7 @@ ifneq ($(CPU_ONLY), 1)
 	LIBRARIES := cudart cublas curand
 endif
 
-LIBRARIES += glog gflags protobuf boost_system boost_filesystem m
+LIBRARIES += glog gflags protobuf boost_system boost_filesystem m hdf5_serial_hl hdf5_serial
 
 # handle IO dependencies
 USE_LEVELDB ?= 1
@@ -195,7 +195,8 @@ ifeq ($(USE_LMDB), 1)
 endif
 # This code is taken from https://github.com/sh1r0/caffe-android-lib
 ifeq ($(USE_HDF5), 1)
-	LIBRARIES += hdf5_hl hdf5
+	#LIBRARIES += hdf5_hl hdf5
+	LIBRARIES += hdf5_serial_hl hdf5_serial
 endif
 ifeq ($(USE_OPENCV), 1)
 	LIBRARIES += opencv_core opencv_highgui opencv_imgproc

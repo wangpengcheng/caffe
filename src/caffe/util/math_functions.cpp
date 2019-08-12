@@ -251,15 +251,12 @@ void caffe_div<double>(const int n, const double* a, const double* b,
   vdDiv(n, a, b, y);
 }
 
-
-}
 /*
 功能 : 同样是element-wise操作，分别是y[i] = a[i] ^ b， y[i] = a[i]^2，y[i] = exp(a[i] )，y[i] = |a[i] |
 */
 
 template <>
-void caffe_powx<float>(const int n, const float* a, const float b,
-    float* y) {
+void caffe_powx<float>(const int n, const float* a, const float b, float* y) {
   vsPowx(n, a, b, y);
 }
 

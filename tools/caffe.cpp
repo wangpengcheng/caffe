@@ -26,6 +26,7 @@ using caffe::Timer;
 using caffe::vector;
 using std::ostringstream;
 
+//google flag来进行参数的获取
 DEFINE_string(gpu, "",
     "Optional; run in GPU mode on given device IDs separated by ','."
     "Use '-gpu all' to run on all available GPUs. The effective training "
@@ -56,10 +57,14 @@ DEFINE_string(sighup_effect, "snapshot",
              "snapshot, stop or none.");
 
 // A simple registry for caffe commands.
+//初始化函数指针
 typedef int (*BrewFunction)();
+//函数指针map
 typedef std::map<caffe::string, BrewFunction> BrewMap;
+//实例化map
 BrewMap g_brew_map;
 
+//注册类函数，将函数用类封装出来，然后就进行实例化
 #define RegisterBrewFunction(func) \
 namespace { \
 class __Registerer_##func { \
@@ -71,10 +76,12 @@ class __Registerer_##func { \
 __Registerer_##func g_registerer_##func; \
 }
 
+//根据输入参数获取对应的函数
 static BrewFunction GetBrewFunction(const caffe::string& name) {
   if (g_brew_map.count(name)) {
     return g_brew_map[name];
   } else {
+    //不存在这个参数，输出错误信息
     LOG(ERROR) << "Available caffe actions:";
     for (BrewMap::iterator it = g_brew_map.begin();
          it != g_brew_map.end(); ++it) {
@@ -86,6 +93,8 @@ static BrewFunction GetBrewFunction(const caffe::string& name) {
 }
 
 // Parse GPU ids or use all available devices
+//获取GPU队列的信息
+
 static void get_gpus(vector<int>* gpus) {
   if (FLAGS_gpu == "all") {
     int count = 0;
@@ -107,7 +116,7 @@ static void get_gpus(vector<int>* gpus) {
     CHECK_EQ(gpus->size(), 0);
   }
 }
-
+//获取输入的参数，并且选择返回选择的模式
 // Parse phase from flags
 caffe::Phase get_phase_from_flags(caffe::Phase default_value) {
   if (FLAGS_phase == "")
@@ -121,6 +130,7 @@ caffe::Phase get_phase_from_flags(caffe::Phase default_value) {
 }
 
 // Parse stages from flags
+//获取状态信息
 vector<string> get_stages_from_flags() {
   vector<string> stages;
   boost::split(stages, FLAGS_stage, boost::is_any_of(","));
@@ -134,6 +144,7 @@ vector<string> get_stages_from_flags() {
 // RegisterBrewFunction(action);
 
 // Device Query: show diagnostic information for a GPU device.
+//查询GPU信息
 int device_query() {
   LOG(INFO) << "Querying GPUs " << FLAGS_gpu;
   vector<int> gpus;
@@ -199,18 +210,24 @@ int train() {
     Caffe::set_mode(Caffe::CPU);
   } else {
     ostringstream s;
+    //遍历GPU列表，循环添加使用的GPU编号
     for (int i = 0; i < gpus.size(); ++i) {
       s << (i ? ", " : "") << gpus[i];
     }
+    //输出使用的GPU信息
     LOG(INFO) << "Using GPUs " << s.str();
 #ifndef CPU_ONLY
+    //遍历查询cpu属性并输出
     cudaDeviceProp device_prop;
+
     for (int i = 0; i < gpus.size(); ++i) {
       cudaGetDeviceProperties(&device_prop, gpus[i]);
       LOG(INFO) << "GPU " << gpus[i] << ": " << device_prop.name;
     }
 #endif
+    //设置解决方案中的设备id为gpu0
     solver_param.set_device_id(gpus[0]);
+    //设置
     Caffe::SetDevice(gpus[0]);
     Caffe::set_mode(Caffe::GPU);
     Caffe::set_solver_count(gpus.size());

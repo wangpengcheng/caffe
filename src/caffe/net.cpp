@@ -44,10 +44,10 @@ Net<Dtype>::Net(const string& param_file, Phase phase,
 
 template <typename Dtype>
 void Net<Dtype>::Init(const NetParameter& in_param) {
-  // Set phase from the state.
+  //初始化当前的状态参数
   phase_ = in_param.state().phase();
   // Filter layers based on their include/exclude rules and
-  // the current NetState.
+  // the current NetState. //创建临时的配置状态参数
   NetParameter filtered_param;
   FilterNet(in_param, &filtered_param);
   LOG_IF(INFO, Caffe::root_solver())
@@ -263,7 +263,7 @@ void Net<Dtype>::FilterNet(const NetParameter& param,
   NetState net_state(param.state());
   param_filtered->CopyFrom(param);
   param_filtered->clear_layer();
-  for (int i = 0; i < param.layer_size(); ++i) {
+  for (int i = 0; i < param.layer_size(); ++i) {//拷贝个个layer的基本信息
     const LayerParameter& layer_param = param.layer(i);
     const string& layer_name = layer_param.name();
     CHECK(layer_param.include_size() == 0 || layer_param.exclude_size() == 0)

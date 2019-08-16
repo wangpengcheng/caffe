@@ -8,7 +8,8 @@
             "name": "caffe c++ (gdb) Launch",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/build_debug/tools/caffe",
+            "program": "${workspaceFolder}/build/tools/caffe",
+            //"program": "${workspaceFolder}/build_debug/tools/caffe",
             "args": [
                 "train",
                 "-solver",

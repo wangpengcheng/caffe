@@ -49,12 +49,12 @@ void Net<Dtype>::Init(const NetParameter& in_param) {
   // Filter layers based on their include/exclude rules and
   // the current NetState. //创建临时的配置状态参数
   NetParameter filtered_param;
-  FilterNet(in_param, &filtered_param);
+  FilterNet(in_param, &filtered_param);//将输入参数拷贝到
   LOG_IF(INFO, Caffe::root_solver())
       << "Initializing net from parameters: " << std::endl
       << filtered_param.DebugString();
   // Create a copy of filtered_param with splits added where necessary.
-
+  //创建filtered_param的副本，并在必要时添加拆分。
   NetParameter param;
   InsertSplits(filtered_param, &param);
   // Basically, build all the layers and set up their connections.
@@ -257,27 +257,27 @@ void Net<Dtype>::Init(const NetParameter& in_param) {
   debug_info_ = param.debug_info();
   LOG_IF(INFO, Caffe::root_solver()) << "Network initialization done.";
 }
-
+//这个函数主要是删除无用的和不必要的网络层。分类根据是train和test。
 template <typename Dtype>
 void Net<Dtype>::FilterNet(const NetParameter& param,
     NetParameter* param_filtered) {
-  NetState net_state(param.state());
-  param_filtered->CopyFrom(param);
-  param_filtered->clear_layer();
-  for (int i = 0; i < param.layer_size(); ++i) {//拷贝个个layer的基本信息
-    const LayerParameter& layer_param = param.layer(i);
-    const string& layer_name = layer_param.name();
+  NetState net_state(param.state());//获取网路状态，tran还是test
+  param_filtered->CopyFrom(param);//使用google buf进行数据拷贝，拷贝层相关参数
+  param_filtered->clear_layer();//清楚layer的相关数据
+  for (int i = 0; i < param.layer_size(); ++i) {//循环拷贝layer的基本信息
+    const LayerParameter& layer_param = param.layer(i);//获取层参数
+    const string& layer_name = layer_param.name();//获取层名称
     CHECK(layer_param.include_size() == 0 || layer_param.exclude_size() == 0)
           << "Specify either include rules or exclude rules; not both.";
     // If no include rules are specified, the layer is included by default and
     // only excluded if it meets one of the exclude rules.
-    bool layer_included = (layer_param.include_size() == 0);
-    for (int j = 0; layer_included && j < layer_param.exclude_size(); ++j) {
+    bool layer_included = (layer_param.include_size() == 0);//没有特殊规则，实行默认的规则
+    for (int j = 0; layer_included && j < layer_param.exclude_size(); ++j) {//存在特殊规则，就不添加到数据中
       if (StateMeetsRule(net_state, layer_param.exclude(j), layer_name)) {
         layer_included = false;
       }
     }
-    for (int j = 0; !layer_included && j < layer_param.include_size(); ++j) {
+    for (int j = 0; !layer_included && j < layer_param.include_size(); ++j) {//检测是否存在test和train的规则
       if (StateMeetsRule(net_state, layer_param.include(j), layer_name)) {
         layer_included = true;
       }

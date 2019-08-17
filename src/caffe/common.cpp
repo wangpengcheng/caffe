@@ -10,7 +10,7 @@
 namespace caffe {
 
 // Make sure each thread can have different values.
-//每个线程的caffe对象，关键控制值
+//每个线程的caffe对象，关键控制值，然而caffe cpu单线程没什么用
 static boost::thread_specific_ptr<Caffe> thread_instance_;
 //Get函数的实现
 Caffe& Caffe::Get() {

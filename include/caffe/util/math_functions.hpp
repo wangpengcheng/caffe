@@ -33,10 +33,18 @@ namespace caffe {
 */
 
 template <typename Dtype>
-void caffe_cpu_gemm(const CBLAS_TRANSPOSE TransA,
-    const CBLAS_TRANSPOSE TransB, const int M, const int N, const int K,
-    const Dtype alpha, const Dtype* A, const Dtype* B, const Dtype beta,
-    Dtype* C);
+void caffe_cpu_gemm(
+    const CBLAS_TRANSPOSE TransA,
+    const CBLAS_TRANSPOSE TransB, 
+    const int M, 
+    const int N, 
+    const int K,
+    const Dtype alpha, 
+    const Dtype* A, 
+    const Dtype* B, 
+    const Dtype beta,
+    Dtype* C
+    );
 
 
 /*
@@ -147,8 +155,13 @@ Dtype caffe_cpu_dot(const int n, const Dtype* x, const Dtype* y);
 //功能： 返回 vector X 和 vector Y 的内积。
 //incx， incy :步长，即每隔incx 或 incy 个element 进行操作。
 template <typename Dtype>
-Dtype caffe_cpu_strided_dot(const int n, const Dtype* x, const int incx,
-    const Dtype* y, const int incy);
+Dtype caffe_cpu_strided_dot(
+  const int n, 
+  const Dtype* x, 
+  const int incx,
+  const Dtype* y, 
+  const int incy
+  );
 
 // Returns the sum of the absolute values of the elements of vector x
 //返回向量X所有元素的绝对值之和

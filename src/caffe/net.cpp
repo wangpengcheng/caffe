@@ -58,10 +58,10 @@ void Net<Dtype>::Init(const NetParameter& in_param) {
   NetParameter param;
   InsertSplits(filtered_param, &param);
   // Basically, build all the layers and set up their connections.
-  name_ = param.name();.//获取参数名称，一般是net的名字
+  name_ = param.name();//获取参数名称，一般是net的名字
   map<string, int> blob_name_to_idx;//blob名称和对应的编号
   set<string> available_blobs;//存在的blob
-  memory_used_ = 0;
+  memory_used_ = 0;//
   // For each layer, set up its input and output
   bottom_vecs_.resize(param.layer_size());
   top_vecs_.resize(param.layer_size());
@@ -254,6 +254,7 @@ void Net<Dtype>::Init(const NetParameter& in_param) {
     layer_names_index_[layer_names_[layer_id]] = layer_id;
   }
   ShareWeights();
+  //是否开启debug信息
   debug_info_ = param.debug_info();
   LOG_IF(INFO, Caffe::root_solver()) << "Network initialization done.";
 }
@@ -526,6 +527,7 @@ Dtype Net<Dtype>::ForwardFromTo(int start, int end) {
     }
     Dtype layer_loss = layers_[i]->Forward(bottom_vecs_[i], top_vecs_[i]);
     loss += layer_loss;
+    //debug输出前向信息
     if (debug_info_) { ForwardDebugInfo(i); }
     for (int c = 0; c < after_forward_.size(); ++c) {
       after_forward_[c]->run(i);
@@ -944,7 +946,7 @@ void Net<Dtype>::ClearParamDiffs() {
     }
   }
 }
-
+//共享权值
 template <typename Dtype>
 void Net<Dtype>::ShareWeights() {
   for (int i = 0; i < params_.size(); ++i) {

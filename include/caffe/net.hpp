@@ -164,38 +164,46 @@ class Net {
   }
   inline const vector<vector<bool> >& bottom_need_backward() const {
     return bottom_need_backward_;//返回是否需要前向计算
-  }
+  }//blob 的loss权重
   inline const vector<Dtype>& blob_loss_weights() const {
     return blob_loss_weights_;
-  }
+  }//是否需要前向计算
   inline const vector<bool>& layer_need_backward() const {
     return layer_need_backward_;
   }
-  /// @brief returns the parameters
+  /// @brief returns the parameters,返回相关的参数
   inline const vector<shared_ptr<Blob<Dtype> > >& params() const {
     return params_;
   }
   inline const vector<Blob<Dtype>*>& learnable_params() const {
-    return learnable_params_;
+    return learnable_params_;//学习参数
   }
   /// @brief returns the learnable parameter learning rate multipliers
+  //返回可学习参数学习速率乘数;即学习参数权重
   inline const vector<float>& params_lr() const { return params_lr_; }
+  //是否存在学习参数权重
   inline const vector<bool>& has_params_lr() const { return has_params_lr_; }
   /// @brief returns the learnable parameter decay multipliers
+  //返回可学习参数衰减乘数
   inline const vector<float>& params_weight_decay() const {
     return params_weight_decay_;
   }
+  //是否存在学习参数衰减
   inline const vector<bool>& has_params_decay() const {
     return has_params_decay_;
   }
+  //参数名称和index索引
   const map<string, int>& param_names_index() const {
     return param_names_index_;
   }
+  //参数所有者
   inline const vector<int>& param_owners() const { return param_owners_; }
+  //参数显示名称
   inline const vector<string>& param_display_names() const {
     return param_display_names_;
   }
   /// @brief Input and output blob numbers
+  //输入输出blob的数目
   inline int num_inputs() const { return net_input_blobs_.size(); }
   inline int num_outputs() const { return net_output_blobs_.size(); }
   inline const vector<Blob<Dtype>*>& input_blobs() const {
@@ -210,11 +218,13 @@ class Net {
   inline const vector<int>& output_blob_indices() const {
     return net_output_blob_indices_;
   }
+  //是否含有blob
   bool has_blob(const string& blob_name) const;
+  //通过名字查找Blob
   const shared_ptr<Blob<Dtype> > blob_by_name(const string& blob_name) const;
   bool has_layer(const string& layer_name) const;
   const shared_ptr<Layer<Dtype> > layer_by_name(const string& layer_name) const;
-
+  //设置debug信息
   void set_debug_info(const bool value) { debug_info_ = value; }
 
   // Helpers for Init.

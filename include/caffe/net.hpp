@@ -23,20 +23,20 @@ namespace caffe {
 template <typename Dtype>
 class Net {
  public:
-  explicit Net(const NetParameter& param);
+  explicit Net(const NetParameter& param);//基本构造函数
   explicit Net(const string& param_file, Phase phase,
-      const int level = 0, const vector<string>* stages = NULL);
+      const int level = 0, const vector<string>* stages = NULL);//加状态的构造函数
   virtual ~Net() {}
 
   /// @brief Initialize a network with a NetParameter.
-  void Init(const NetParameter& param);
+  void Init(const NetParameter& param);//初始化函数
 
   /**
    * @brief Run Forward and return the result.
    *
    */
-  const vector<Blob<Dtype>*>& Forward(Dtype* loss = NULL);
-  /// @brief DEPRECATED; use Forward() instead.
+  const vector<Blob<Dtype>*>& Forward(Dtype* loss = NULL);//前向计算函数
+  /// @brief DEPRECATED; use Forward() instead.//旧函数已经被forward取代
   const vector<Blob<Dtype>*>& ForwardPrefilled(Dtype* loss = NULL) {
     LOG_EVERY_N(WARNING, 1000) << "DEPRECATED: ForwardPrefilled() "
         << "will be removed in a future version. Use Forward().";
@@ -49,7 +49,8 @@ class Net {
    * networks, note that (1) computing from one layer to another might entail
    * extra computation on unrelated branches, and (2) computation starting in
    * the middle may be incorrect if all of the layers of a fan-in are not
-   * included.
+   * included.Forward和Backward的From和To变体对指定网络的（拓扑）排序进行操作。 对于一般的DAG网络，请注意（1）从一层到另一层的计算可能需要在不相关的分支上进行额外的计算，以及（2）如果不包括扇入的所有层，则从中间开始的计算可能是不正确的。
+   * 
    */
   Dtype ForwardFromTo(int start, int end);
   Dtype ForwardFrom(int start);
@@ -62,17 +63,17 @@ class Net {
    * @brief Zeroes out the diffs of all net parameters.
    *        Should be run before Backward.
    */
-  void ClearParamDiffs();
+  void ClearParamDiffs();//将所有参数置0，应该在开始run之前运行
 
   /**
    * The network backward should take no input and output, since it solely
    * computes the gradient w.r.t the parameters, and the data has already been
    * provided during the forward pass.
    */
-  void Backward();
-  void BackwardFromTo(int start, int end);
-  void BackwardFrom(int start);
-  void BackwardTo(int end);
+  void Backward();//反向计算函数
+  void BackwardFromTo(int start, int end);//指定反向计算的范围
+  void BackwardFrom(int start);//
+  void BackwardTo(int end);//
 
   /**
    * @brief Reshape all layers from bottom to top.
@@ -81,60 +82,60 @@ class Net {
    * a forward pass, e.g. to compute output feature size.
    */
   void Reshape();
-
+//反向计算函数
   Dtype ForwardBackward() {
     Dtype loss;
-    Forward(&loss);
-    Backward();
+    Forward(&loss);//前向计算
+    Backward();//反向计算
     return loss;
   }
 
   /// @brief Updates the network weights based on the diff values computed.
-  void Update();
+  void Update();//更新权重和误差值
   /**
    * @brief Shares weight data of owner blobs with shared blobs.
    *
    * Note: this is called by Net::Init, and thus should normally not be
    * called manually.
    */
-  void ShareWeights();
+  void ShareWeights();//权值共享
 
   /**
    * @brief For an already initialized net, implicitly copies (i.e., using no
    *        additional memory) the pre-trained layers from another Net.
    */
-  void ShareTrainedLayersWith(const Net* other);
+  void ShareTrainedLayersWith(const Net* other);//共享训练好的权值
   // For an already initialized net, CopyTrainedLayersFrom() copies the already
   // trained layers from another net parameter instance.
   /**
    * @brief For an already initialized net, copies the pre-trained layers from
    *        another Net.
    */
-  void CopyTrainedLayersFrom(const NetParameter& param);
+  void CopyTrainedLayersFrom(const NetParameter& param);//从已经训练好的权值中读取参数
   void CopyTrainedLayersFrom(const string& trained_filename);
   void CopyTrainedLayersFromBinaryProto(const string& trained_filename);
   void CopyTrainedLayersFromHDF5(const string& trained_filename);
   /// @brief Writes the net to a proto.
-  void ToProto(NetParameter* param, bool write_diff = false) const;
+  void ToProto(NetParameter* param, bool write_diff = false) const;//转化为proto
   /// @brief Writes the net to an HDF5 file.
-  void ToHDF5(const string& filename, bool write_diff = false) const;
+  void ToHDF5(const string& filename, bool write_diff = false) const;//转化为hdf5
 
   /// @brief returns the network name.
-  inline const string& name() const { return name_; }
+  inline const string& name() const { return name_; }//net name
   /// @brief returns the layer names
-  inline const vector<string>& layer_names() const { return layer_names_; }
+  inline const vector<string>& layer_names() const { return layer_names_; }//layer names
   /// @brief returns the blob names
-  inline const vector<string>& blob_names() const { return blob_names_; }
+  inline const vector<string>& blob_names() const { return blob_names_; }//blob names
   /// @brief returns the blobs
   inline const vector<shared_ptr<Blob<Dtype> > >& blobs() const {
-    return blobs_;
+    return blobs_; //返回blobs
   }
   /// @brief returns the layers
   inline const vector<shared_ptr<Layer<Dtype> > >& layers() const {
-    return layers_;
+    return layers_;//返回layers
   }
   /// @brief returns the phase: TRAIN or TEST
-  inline Phase phase() const { return phase_; }
+  inline Phase phase() const { return phase_; }//返回shase函数
   /**
    * @brief returns the bottom vecs for each layer -- usually you won't
    *        need this unless you do per-layer checks such as gradients.
@@ -149,20 +150,20 @@ class Net {
   inline const vector<vector<Blob<Dtype>*> >& top_vecs() const {
     return top_vecs_;
   }
-  /// @brief returns the ids of the top blobs of layer i
+  /// @brief returns the ids of the top blobs of layer i，返回layer i的 top blobs
   inline const vector<int> & top_ids(int i) const {
     CHECK_GE(i, 0) << "Invalid layer id";
     CHECK_LT(i, top_id_vecs_.size()) << "Invalid layer id";
     return top_id_vecs_[i];
   }
-  /// @brief returns the ids of the bottom blobs of layer i
+  /// @brief returns the ids of the bottom blobs of layer i ;返回layer i的 bottom blobs
   inline const vector<int> & bottom_ids(int i) const {
     CHECK_GE(i, 0) << "Invalid layer id";
     CHECK_LT(i, bottom_id_vecs_.size()) << "Invalid layer id";
     return bottom_id_vecs_[i];
   }
   inline const vector<vector<bool> >& bottom_need_backward() const {
-    return bottom_need_backward_;
+    return bottom_need_backward_;//返回是否需要前向计算
   }
   inline const vector<Dtype>& blob_loss_weights() const {
     return blob_loss_weights_;

@@ -58,9 +58,9 @@ void Net<Dtype>::Init(const NetParameter& in_param) {
   NetParameter param;
   InsertSplits(filtered_param, &param);
   // Basically, build all the layers and set up their connections.
-  name_ = param.name();
-  map<string, int> blob_name_to_idx;
-  set<string> available_blobs;
+  name_ = param.name();.//获取参数名称，一般是net的名字
+  map<string, int> blob_name_to_idx;//blob名称和对应的编号
+  set<string> available_blobs;//存在的blob
   memory_used_ = 0;
   // For each layer, set up its input and output
   bottom_vecs_.resize(param.layer_size());

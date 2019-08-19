@@ -305,7 +305,7 @@ message NetState {
   optional int32 level = 2 [default = 0];
   repeated string stage = 3;
 }
-
+//网络状态规则 
 message NetStateRule {
   // Set phase to require the NetState have a particular phase (TRAIN or TEST)
   // to meet this rule.

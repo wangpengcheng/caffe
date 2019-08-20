@@ -232,13 +232,16 @@ class Net {
    * @brief Remove layers that the user specified should be excluded given the current
    *        phase, level, and stage.
    */
+  //根据状态对网络进行筛选,根据参数移除指定的层
   static void FilterNet(const NetParameter& param,
       NetParameter* param_filtered);
   /// @brief return whether NetState state meets NetStateRule rule
+  //返回NetStat状态是否符合NetStat规则规则
   static bool StateMeetsRule(const NetState& state, const NetStateRule& rule,
       const string& layer_name);
 
   // Invoked at specific points during an iteration
+  //回调函数 在迭代期间在特定点调用，这个主要是多GPU训练时使用
   class Callback {
    protected:
     virtual void run(int layer) = 0;
@@ -264,9 +267,11 @@ class Net {
   }
 
  protected:
-  // Helpers for Init.
+  // Helpers for Init. Init辅助函数
   /// @brief Append a new top blob to the net.
-  void AppendTop(const NetParameter& param, const int layer_id,
+  //为net添加一个新的top blob
+  void AppendTop(const NetParameter& param, 
+                  const int layer_id,
                  const int top_id, set<string>* available_blobs,
                  map<string, int>* blob_name_to_idx);
   /// @brief Append a new bottom blob to the net.
@@ -274,6 +279,7 @@ class Net {
                    const int bottom_id, set<string>* available_blobs,
                    map<string, int>* blob_name_to_idx);
   /// @brief Append a new parameter blob to the net.
+  //通过参数添加Blob
   void AppendParam(const NetParameter& param, const int layer_id,
                    const int param_id);
 
@@ -291,57 +297,66 @@ class Net {
   /// @brief Individual layers in the net
   vector<shared_ptr<Layer<Dtype> > > layers_;
   vector<string> layer_names_;
-  map<string, int> layer_names_index_;
-  vector<bool> layer_need_backward_;
+  map<string, int> layer_names_index_;//layers 索引
+  vector<bool> layer_need_backward_;//是否需要反向计算
   /// @brief the blobs storing intermediate results between the layer.
-  vector<shared_ptr<Blob<Dtype> > > blobs_;
+  vector<shared_ptr<Blob<Dtype> > > blobs_;//blob 
   vector<string> blob_names_;
-  map<string, int> blob_names_index_;
-  vector<bool> blob_need_backward_;
+  map<string, int> blob_names_index_;//blob索引
+  vector<bool> blob_need_backward_;//是否需要反向计算
   /// bottom_vecs stores the vectors containing the input for each layer.
   /// They don't actually host the blobs (blobs_ does), so we simply store
   /// pointers.
-  vector<vector<Blob<Dtype>*> > bottom_vecs_;
-  vector<vector<int> > bottom_id_vecs_;
-  vector<vector<bool> > bottom_need_backward_;
+  vector<vector<Blob<Dtype>*> > bottom_vecs_;//存储每一个layer input  bottom blobs 指针
+  vector<vector<int> > bottom_id_vecs_;//存储每一个bottom blobs id
+  vector<vector<bool> > bottom_need_backward_;//是否需要反向计算
   /// top_vecs stores the vectors containing the output for each layer
-  vector<vector<Blob<Dtype>*> > top_vecs_;
-  vector<vector<int> > top_id_vecs_;
+  vector<vector<Blob<Dtype>*> > top_vecs_;//存储每一个layer output top blobs 指针
+  vector<vector<int> > top_id_vecs_;//存储每一个layer output top blobs 指针
   /// Vector of weight in the loss (or objective) function of each net blob,
   /// indexed by blob_id.
-  vector<Dtype> blob_loss_weights_;
-  vector<vector<int> > param_id_vecs_;
-  vector<int> param_owners_;
-  vector<string> param_display_names_;
-  vector<pair<int, int> > param_layer_indices_;
-  map<string, int> param_names_index_;
-  /// blob indices for the input and the output of the net
+  vector<Dtype> blob_loss_weights_;// layer 的loss函数值
+  //这些主要都是为了输出信息使用
+  vector<vector<int> > param_id_vecs_;//参数的idvector
+  vector<int> param_owners_;//参数所有者
+  vector<string> param_display_names_;//参数显示名称
+  vector<pair<int, int> > param_layer_indices_;//
+  map<string, int> param_names_index_;//参数名称索引
+  /// blob indices for the input and the output of the net 输入和网络输出的blob索引
   vector<int> net_input_blob_indices_;
   vector<int> net_output_blob_indices_;
   vector<Blob<Dtype>*> net_input_blobs_;
   vector<Blob<Dtype>*> net_output_blobs_;
   /// The parameters in the network.
-  vector<shared_ptr<Blob<Dtype> > > params_;
-  vector<Blob<Dtype>*> learnable_params_;
+  vector<shared_ptr<Blob<Dtype> > > params_;//相关参数
+  vector<Blob<Dtype>*> learnable_params_;//学习参数用Blob来进行存储
   /**
    * The mapping from params_ -> learnable_params_: we have
    * learnable_param_ids_.size() == params_.size(),
    * and learnable_params_[learnable_param_ids_[i]] == params_[i].get()
    * if and only if params_[i] is an "owner"; otherwise, params_[i] is a sharer
    * and learnable_params_[learnable_param_ids_[i]] gives its owner.
+   * 
+   * 来自params_ - > learnable_params_的映射：
+   * 我们有learnable_param_ids_.size（）== params_.size（）
+   * 和learnable_params_ [learnable_param_ids_ [i]] == params_ [i] .get（）
+   * 当且仅当params_ [i]是“所有者”时; 否则，params_ [i]是一个共享者，
+   * learnable_params_ [learnable_param_ids_ [i]]给它的主人。
    */
-  vector<int> learnable_param_ids_;
+  vector<int> learnable_param_ids_; //学习参数索引
   /// the learning rate multipliers for learnable_params_
+  //learnable_params_的学习率乘数
   vector<float> params_lr_;
-  vector<bool> has_params_lr_;
-  /// the weight decay multipliers for learnable_params_
-  vector<float> params_weight_decay_;
-  vector<bool> has_params_decay_;
+  vector<bool> has_params_lr_;//是否需要乘数
+  /// the weight decay multipliers for learnable_params_ ；learnable_params_的重量衰减乘数
+  vector<float> params_weight_decay_;//权重参数
+  vector<bool> has_params_decay_;//是否衰减
   /// The bytes of memory used by this net
-  size_t memory_used_;
+  size_t memory_used_;//使用的内存量
   /// Whether to compute and display debug info for the net.
   bool debug_info_;
   // Callbacks
+  //回调函数；主要是与nccl配合使用
   vector<Callback*> before_forward_;
   vector<Callback*> after_forward_;
   vector<Callback*> before_backward_;

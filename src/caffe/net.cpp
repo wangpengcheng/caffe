@@ -49,14 +49,14 @@ void Net<Dtype>::Init(const NetParameter& in_param) {
   // Filter layers based on their include/exclude rules and
   // the current NetState. //创建临时的配置状态参数
   NetParameter filtered_param;
-  FilterNet(in_param, &filtered_param);//将输入参数拷贝到
+  FilterNet(in_param, &filtered_param);//将输入参数拷贝到filtered_param中，根据模式train/test进行分割
   LOG_IF(INFO, Caffe::root_solver())
       << "Initializing net from parameters: " << std::endl
       << filtered_param.DebugString();
   // Create a copy of filtered_param with splits added where necessary.
   //创建filtered_param的副本，并在必要时添加拆分。
   NetParameter param;
-  InsertSplits(filtered_param, &param);
+  InsertSplits(filtered_param, &param);//进行分割，主要是分出各个层之间的共享关系，理清blob名称
   // Basically, build all the layers and set up their connections.
   name_ = param.name();
   map<string, int> blob_name_to_idx;

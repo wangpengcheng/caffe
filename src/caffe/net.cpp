@@ -58,10 +58,10 @@ void Net<Dtype>::Init(const NetParameter& in_param) {
   NetParameter param;
   InsertSplits(filtered_param, &param);//进行分割，主要是分出各个层之间的共享关系，理清blob名称
   // Basically, build all the layers and set up their connections.
-  name_ = param.name();
-  map<string, int> blob_name_to_idx;
-  set<string> available_blobs;
-  memory_used_ = 0;
+  name_ = param.name();//获取参数名称，一般是net的名字
+  map<string, int> blob_name_to_idx;//blob名称和对应的编号
+  set<string> available_blobs;//存在的blob
+  memory_used_ = 0;//
   // For each layer, set up its input and output
   bottom_vecs_.resize(param.layer_size());
   top_vecs_.resize(param.layer_size());
@@ -254,6 +254,7 @@ void Net<Dtype>::Init(const NetParameter& in_param) {
     layer_names_index_[layer_names_[layer_id]] = layer_id;
   }
   ShareWeights();
+  //是否开启debug信息
   debug_info_ = param.debug_info();
   LOG_IF(INFO, Caffe::root_solver()) << "Network initialization done.";
 }
@@ -287,7 +288,7 @@ void Net<Dtype>::FilterNet(const NetParameter& param,
     }
   }
 }
-
+//返回NetStat状态是否符合NetStat规则规则
 template <typename Dtype>
 bool Net<Dtype>::StateMeetsRule(const NetState& state,
     const NetStateRule& rule, const string& layer_name) {
@@ -355,52 +356,72 @@ bool Net<Dtype>::StateMeetsRule(const NetState& state,
 }
 
 // Helper for Net::Init: add a new top blob to the net.
+//为各层创建top blob，该函数真正的为blob分配内存空间的对象，将其指针压入到top_vecs_中。
 template <typename Dtype>
-void Net<Dtype>::AppendTop(const NetParameter& param, const int layer_id,
-                           const int top_id, set<string>* available_blobs,
-                           map<string, int>* blob_name_to_idx) {
+void Net<Dtype>::AppendTop(const NetParameter& param, 
+                           const int layer_id,
+                           const int top_id, 
+                           set<string>* available_blobs,
+                           map<string, int>* blob_name_to_idx
+                           ) {
+  //获取共享layer参数共享指针
   shared_ptr<LayerParameter> layer_param(
       new LayerParameter(param.layer(layer_id)));
+  //获取blob name
   const string& blob_name = (layer_param->top_size() > top_id) ?
       layer_param->top(top_id) : "(automatic)";
   // Check if we are doing in-place computation
+  //检查我们是否正在进行就地计算,当索引存在，并且存在相对映射，名称和编号对应
   if (blob_name_to_idx && layer_param->bottom_size() > top_id &&
       blob_name == layer_param->bottom(top_id)) {
     // In-place computation
     LOG_IF(INFO, Caffe::root_solver())
         << layer_param->name() << " -> " << blob_name << " (in-place)";
+      //将blob添加到对应的top_vec
     top_vecs_[layer_id].push_back(blobs_[(*blob_name_to_idx)[blob_name]].get());
+    //存贮对应的blob id
     top_id_vecs_[layer_id].push_back((*blob_name_to_idx)[blob_name]);
   } else if (blob_name_to_idx &&
              blob_name_to_idx->find(blob_name) != blob_name_to_idx->end()) {
     // If we are not doing in-place computation but have duplicated blobs,
     // raise an error.
+    //如果我们没有进行就地计算但是有重复的blob，则引发错误。即blob 已经存在
     LOG(FATAL) << "Top blob '" << blob_name
                << "' produced by multiple sources.";
   } else {
-    // Normal output.
+    // Normal output.；没有即时计算，也没有已经存在
     if (Caffe::root_solver()) {
       LOG(INFO) << layer_param->name() << " -> " << blob_name;
     }
+    //创建共享指针
     shared_ptr<Blob<Dtype> > blob_pointer(new Blob<Dtype>());
-    const int blob_id = blobs_.size();
+    const int blob_id = blobs_.size();//获取
     blobs_.push_back(blob_pointer);
     blob_names_.push_back(blob_name);
-    blob_need_backward_.push_back(false);
-    if (blob_name_to_idx) { (*blob_name_to_idx)[blob_name] = blob_id; }
-    top_id_vecs_[layer_id].push_back(blob_id);
-    top_vecs_[layer_id].push_back(blob_pointer.get());
+    blob_need_backward_.push_back(false);//是否需要反向计算
+    if (blob_name_to_idx) { (*blob_name_to_idx)[blob_name] = blob_id; }//给她新编号
+    top_id_vecs_[layer_id].push_back(blob_id);//设置top对应的layer
+    top_vecs_[layer_id].push_back(blob_pointer.get());//将其压入top指针
   }
   if (available_blobs) { available_blobs->insert(blob_name); }
 }
 
 // Helper for Net::Init: add a new bottom blob to the net.
+//将blob添加到bottom Blob 
+//为各层创建bottom blob，由于当前层的输入blob是前一层的输出blob。
+//因此，此函数并没没有真正的创建blob，
+//只是在将前一层的指针压入到了bottom_vecs_中。
 template <typename Dtype>
-int Net<Dtype>::AppendBottom(const NetParameter& param, const int layer_id,
-    const int bottom_id, set<string>* available_blobs,
-    map<string, int>* blob_name_to_idx) {
+int Net<Dtype>::AppendBottom(
+    const NetParameter& param, 
+    const int layer_id,
+    const int bottom_id, 
+    set<string>* available_blobs,
+    map<string, int>* blob_name_to_idx
+    ) {
   const LayerParameter& layer_param = param.layer(layer_id);
   const string& blob_name = layer_param.bottom(bottom_id);
+  //先看是否能正常找到，找不到就直接退出程序
   if (available_blobs->find(blob_name) == available_blobs->end()) {
     LOG(FATAL) << "Unknown bottom blob '" << blob_name << "' (layer '"
                << layer_param.name() << "', bottom index " << bottom_id << ")";
@@ -413,18 +434,25 @@ int Net<Dtype>::AppendBottom(const NetParameter& param, const int layer_id,
   available_blobs->erase(blob_name);
   bool need_backward = blob_need_backward_[blob_id];
   // Check if the backpropagation on bottom_id should be skipped
+  //检查是否应跳过bottom_id上的反向传播
   if (layer_param.propagate_down_size() > 0) {
     need_backward = layer_param.propagate_down(bottom_id);
   }
   bottom_need_backward_[layer_id].push_back(need_backward);
   return blob_id;
 }
-
+//通过参数添加Blob
+//修改和参数有关的变量，实际的层参数的blob在上面提到的setup()函数中已经创建。
+//如：将层参数blob的指针压入到params_。
 template <typename Dtype>
-void Net<Dtype>::AppendParam(const NetParameter& param, const int layer_id,
+void Net<Dtype>::AppendParam(const NetParameter& param, 
+                             const int layer_id,
                              const int param_id) {
+  //获取layer参数
   const LayerParameter& layer_param = layers_[layer_id]->layer_param();
+  //获取参数大小
   const int param_size = layer_param.param_size();
+  //获取参数名称
   string param_name =
       (param_size > param_id) ? layer_param.param(param_id).name() : "";
   if (param_name.size()) {
@@ -438,19 +466,23 @@ void Net<Dtype>::AppendParam(const NetParameter& param, const int layer_id,
   params_.push_back(layers_[layer_id]->blobs()[param_id]);
   param_id_vecs_[layer_id].push_back(net_param_id);
   param_layer_indices_.push_back(make_pair(layer_id, param_id));
-  ParamSpec default_param_spec;
-  const ParamSpec* param_spec = (layer_param.param_size() > param_id) ?
-      &layer_param.param(param_id) : &default_param_spec;
+  ParamSpec default_param_spec;//定义数据维度
+  //判断是否超过范围
+  const ParamSpec* param_spec = (layer_param.param_size() > param_id) ? &layer_param.param(param_id) : &default_param_spec;
+  //超过范围，是新的参数
   if (!param_size || !param_name.size() || (param_name.size() &&
       param_names_index_.find(param_name) == param_names_index_.end())) {
     // This layer "owns" this parameter blob -- it is either anonymous
     // (i.e., not given a param_name) or explicitly given a name that we
     // haven't already seen.
+    //该层“拥有”此参数blob  - 它是匿名的（即，未给出param_name）或显式给出我们尚未看到的名称。
     param_owners_.push_back(-1);
+    //如果名字不为空
     if (param_name.size()) {
-      param_names_index_[param_name] = net_param_id;
+      param_names_index_[param_name] = net_param_id;//获取参数id
     }
-    const int learnable_param_id = learnable_params_.size();
+    //学习参数索引
+    const int learnable_param_id = learnable_params_.size();//用最后一个做为index
     learnable_params_.push_back(params_[net_param_id].get());
     learnable_param_ids_.push_back(learnable_param_id);
     has_params_lr_.push_back(param_spec->has_lr_mult());
@@ -459,16 +491,19 @@ void Net<Dtype>::AppendParam(const NetParameter& param, const int layer_id,
     params_weight_decay_.push_back(param_spec->decay_mult());
   } else {
     // Named param blob with name we've seen before: share params
+    //在共享参数中看到过，则进行参数更改
     const int owner_net_param_id = param_names_index_[param_name];
     param_owners_.push_back(owner_net_param_id);
     const pair<int, int>& owner_index =
         param_layer_indices_[owner_net_param_id];
     const int owner_layer_id = owner_index.first;
     const int owner_param_id = owner_index.second;
+    //输出共享参数
     LOG_IF(INFO, Caffe::root_solver()) << "Sharing parameters '" << param_name
         << "' owned by "
         << "layer '" << layer_names_[owner_layer_id] << "', param "
         << "index " << owner_param_id;
+        //获取指定的Blob
     Blob<Dtype>* this_blob = layers_[layer_id]->blobs()[param_id].get();
     Blob<Dtype>* owner_blob =
         layers_[owner_layer_id]->blobs()[owner_param_id].get();
@@ -476,6 +511,7 @@ void Net<Dtype>::AppendParam(const NetParameter& param, const int layer_id,
     if (param_size > param_id && (layer_param.param(param_id).share_mode() ==
                                   ParamSpec_DimCheckMode_PERMISSIVE)) {
       // Permissive dimension checking -- only check counts are the same.
+      //允许的维度检查 - 仅检查计数是相同的。
       CHECK_EQ(this_blob->count(), owner_blob->count())
           << "Cannot share param '" << param_name << "' owned by layer '"
           << layer_names_[owner_layer_id] << "' with layer '"
@@ -484,6 +520,7 @@ void Net<Dtype>::AppendParam(const NetParameter& param, const int layer_id,
           << "shape is " << this_blob->shape_string();
     } else {
       // Strict dimension checking -- all dims must be the same.
+      //严格的维度检查，所有的必须都相同
       CHECK(this_blob->shape() == owner_blob->shape())
           << "Cannot share param '" << param_name << "' owned by layer '"
           << layer_names_[owner_layer_id] << "' with layer '"
@@ -493,8 +530,8 @@ void Net<Dtype>::AppendParam(const NetParameter& param, const int layer_id,
     }
     const int learnable_param_id = learnable_param_ids_[owner_net_param_id];
     learnable_param_ids_.push_back(learnable_param_id);
-    if (param_spec->has_lr_mult()) {
-      if (has_params_lr_[learnable_param_id]) {
+    if (param_spec->has_lr_mult()) {//如果需要学习率
+      if (has_params_lr_[learnable_param_id]) {//元数据是否需要学习率
         CHECK_EQ(param_spec->lr_mult(), params_lr_[learnable_param_id])
             << "Shared param '" << param_name << "' has mismatched lr_mult.";
       } else {
@@ -502,6 +539,7 @@ void Net<Dtype>::AppendParam(const NetParameter& param, const int layer_id,
         params_lr_[learnable_param_id] = param_spec->lr_mult();
       }
     }
+    //是否需要权重衰减
     if (param_spec->has_decay_mult()) {
       if (has_params_decay_[learnable_param_id]) {
         CHECK_EQ(param_spec->decay_mult(),
@@ -526,6 +564,7 @@ Dtype Net<Dtype>::ForwardFromTo(int start, int end) {
     }
     Dtype layer_loss = layers_[i]->Forward(bottom_vecs_[i], top_vecs_[i]);
     loss += layer_loss;
+    //debug输出前向信息
     if (debug_info_) { ForwardDebugInfo(i); }
     for (int c = 0; c < after_forward_.size(); ++c) {
       after_forward_[c]->run(i);
@@ -944,7 +983,7 @@ void Net<Dtype>::ClearParamDiffs() {
     }
   }
 }
-
+//共享权值
 template <typename Dtype>
 void Net<Dtype>::ShareWeights() {
   for (int i = 0; i < params_.size(); ++i) {

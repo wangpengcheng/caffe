@@ -61,21 +61,21 @@ void Net<Dtype>::Init(const NetParameter& in_param) {
   name_ = param.name();//获取参数名称，一般是net的名字
   map<string, int> blob_name_to_idx;//blob名称和对应的编号
   set<string> available_blobs;//存在的blob
-  memory_used_ = 0;//
+  memory_used_ = 0;//内存使用情况
   // For each layer, set up its input and output
-  bottom_vecs_.resize(param.layer_size());
-  top_vecs_.resize(param.layer_size());
-  bottom_id_vecs_.resize(param.layer_size());
-  param_id_vecs_.resize(param.layer_size());
+  bottom_vecs_.resize(param.layer_size());//意这里主要是存储指针，没有进行内存分配
+  top_vecs_.resize(param.layer_size());//top向量的指针
+  bottom_id_vecs_.resize(param.layer_size());//bottom  id向量
+  param_id_vecs_.resize(param.layer_size());//相关参数向量
   top_id_vecs_.resize(param.layer_size());
   bottom_need_backward_.resize(param.layer_size());
   for (int layer_id = 0; layer_id < param.layer_size(); ++layer_id) {
-    // Inherit phase from net if unset.
+    // Inherit phase from net if unset.//设置状态
     if (!param.layer(layer_id).has_phase()) {
-      param.mutable_layer(layer_id)->set_phase(phase_);
+      param.mutable_layer(layer_id)->set_phase(phase_);//设置状态
     }
     // Setup layer.
-    const LayerParameter& layer_param = param.layer(layer_id);
+    const LayerParameter& layer_param = param.layer(layer_id);//获取层的参数
     if (layer_param.propagate_down_size() > 0) {
       CHECK_EQ(layer_param.propagate_down_size(),
           layer_param.bottom_size())
@@ -86,31 +86,31 @@ void Net<Dtype>::Init(const NetParameter& in_param) {
     layer_names_.push_back(layer_param.name());
     LOG_IF(INFO, Caffe::root_solver())
         << "Creating Layer " << layer_param.name();
-    bool need_backward = false;
+    bool need_backward = false;//初始化为不需要反向迭代
 
-    // Figure out this layer's input and output
+    // Figure out this layer's input and output；确认输入和输出
     for (int bottom_id = 0; bottom_id < layer_param.bottom_size();
          ++bottom_id) {
       const int blob_id = AppendBottom(param, layer_id, bottom_id,
                                        &available_blobs, &blob_name_to_idx);
       // If a blob needs backward, this layer should provide it.
-      need_backward |= blob_need_backward_[blob_id];
+      need_backward |= blob_need_backward_[blob_id];//这里pull层需要反向传播
     }
-    int num_top = layer_param.top_size();
+    int num_top = layer_param.top_size();//添加top blob
     for (int top_id = 0; top_id < num_top; ++top_id) {
       AppendTop(param, layer_id, top_id, &available_blobs, &blob_name_to_idx);
       // Collect Input layer tops as Net inputs.
-      if (layer_param.type() == "Input") {
+      if (layer_param.type() == "Input") {//是否是输入层
         const int blob_id = blobs_.size() - 1;
-        net_input_blob_indices_.push_back(blob_id);
-        net_input_blobs_.push_back(blobs_[blob_id].get());
+        net_input_blob_indices_.push_back(blob_id);//输入层列表++
+        net_input_blobs_.push_back(blobs_[blob_id].get());//输入层指针列表++
       }
     }
     // If the layer specifies that AutoTopBlobs() -> true and the LayerParameter
     // specified fewer than the required number (as specified by
-    // ExactNumTopBlobs() or MinTopBlobs()), allocate them here.
-    Layer<Dtype>* layer = layers_[layer_id].get();
-    if (layer->AutoTopBlobs()) {
+    // ExactNumTopBlobs() or MinTopBlobs()), allocate them here.//当存在blob扩充时，在这里进行扩充
+    Layer<Dtype>* layer = layers_[layer_id].get();//获取layer指针
+    if (layer->AutoTopBlobs()) {//如果需要额外的对blob进行扩充，即输入和输出不对等
       const int needed_num_top =
           std::max(layer->MinTopBlobs(), layer->ExactNumTopBlobs());
       for (; num_top < needed_num_top; ++num_top) {
@@ -123,42 +123,42 @@ void Net<Dtype>::Init(const NetParameter& in_param) {
     // After this layer is connected, set it up.
     layers_[layer_id]->SetUp(bottom_vecs_[layer_id], top_vecs_[layer_id]);
     LOG_IF(INFO, Caffe::root_solver())
-        << "Setting up " << layer_names_[layer_id];
+        << "Setting up " << layer_names_[layer_id];//输出对应的layer名称信息
     for (int top_id = 0; top_id < top_vecs_[layer_id].size(); ++top_id) {
-      if (blob_loss_weights_.size() <= top_id_vecs_[layer_id][top_id]) {
-        blob_loss_weights_.resize(top_id_vecs_[layer_id][top_id] + 1, Dtype(0));
+      if (blob_loss_weights_.size() <= top_id_vecs_[layer_id][top_id]) {//调整权重
+        blob_loss_weights_.resize(top_id_vecs_[layer_id][top_id] + 1, Dtype(0));//重新分配权重内存
       }
-      blob_loss_weights_[top_id_vecs_[layer_id][top_id]] = layer->loss(top_id);
+      blob_loss_weights_[top_id_vecs_[layer_id][top_id]] = layer->loss(top_id);//设置loss权重
       LOG_IF(INFO, Caffe::root_solver())
-          << "Top shape: " << top_vecs_[layer_id][top_id]->shape_string();
-      if (layer->loss(top_id)) {
+          << "Top shape: " << top_vecs_[layer_id][top_id]->shape_string();//输出维度信息
+      if (layer->loss(top_id)) {//输出loss，主要是为loss层进行设计的
         LOG_IF(INFO, Caffe::root_solver())
             << "    with loss weight " << layer->loss(top_id);
       }
-      memory_used_ += top_vecs_[layer_id][top_id]->count();
+      memory_used_ += top_vecs_[layer_id][top_id]->count();//添加使用内存计数
     }
     LOG_IF(INFO, Caffe::root_solver())
-        << "Memory required for data: " << memory_used_ * sizeof(Dtype);
-    const int param_size = layer_param.param_size();
-    const int num_param_blobs = layers_[layer_id]->blobs().size();
+        << "Memory required for data: " << memory_used_ * sizeof(Dtype);//输出内存使用信息
+    const int param_size = layer_param.param_size();//获取额外的参数数量
+    const int num_param_blobs = layers_[layer_id]->blobs().size();//获取blob数量
     CHECK_LE(param_size, num_param_blobs)
         << "Too many params specified for layer " << layer_param.name();
-    ParamSpec default_param_spec;
-    for (int param_id = 0; param_id < num_param_blobs; ++param_id) {
+    ParamSpec default_param_spec;//设置其它参数，如学习率等
+    for (int param_id = 0; param_id < num_param_blobs; ++param_id) {//是否含有其它的额外参数，即param标签中的数，主要是为了反向计算
       const ParamSpec* param_spec = (param_id < param_size) ?
-          &layer_param.param(param_id) : &default_param_spec;
-      const bool param_need_backward = param_spec->lr_mult() != 0;
-      need_backward |= param_need_backward;
+          &layer_param.param(param_id) : &default_param_spec;//获取当前参数指针
+      const bool param_need_backward = param_spec->lr_mult() != 0;//判断学习率是否为0
+      need_backward |= param_need_backward;//一般需要反向计算的都有权重和学习率
       layers_[layer_id]->set_param_propagate_down(param_id,
-                                                  param_need_backward);
-    }
+                                                  param_need_backward);//设置反向计算参数
+    }//添加参数blob，这里主要是为net添加额外的参数Blob，如学习权重等
     for (int param_id = 0; param_id < num_param_blobs; ++param_id) {
       AppendParam(param, layer_id, param_id);
     }
-    // Finally, set the backward flag
+    // Finally, set the backward flag.设置是否需要反向计算
     layer_need_backward_.push_back(need_backward);
-    if (need_backward) {
-      for (int top_id = 0; top_id < top_id_vecs_[layer_id].size(); ++top_id) {
+    if (need_backward) {//如果需要反向传播
+      for (int top_id = 0; top_id < top_id_vecs_[layer_id].size(); ++top_id) {//遍历进行参数更改
         blob_need_backward_[top_id_vecs_[layer_id][top_id]] = true;
       }
     }
@@ -169,7 +169,7 @@ void Net<Dtype>::Init(const NetParameter& in_param) {
   // Also checks if all bottom blobs don't need backward computation (possible
   // because the skip_propagate_down param) and so we can skip backward
   // computation for the entire layer
-  set<string> blobs_under_loss;
+  set<string> blobs_under_loss;//设置loss
   set<string> blobs_skip_backp;
   for (int layer_id = layers_.size() - 1; layer_id >= 0; --layer_id) {
     bool layer_contributes_loss = false;
@@ -389,13 +389,13 @@ void Net<Dtype>::AppendTop(const NetParameter& param,
     LOG(FATAL) << "Top blob '" << blob_name
                << "' produced by multiple sources.";
   } else {
-    // Normal output.；没有即时计算，也没有已经存在
+    // Normal output.；没有即时计算，也没有已经存在,创建Blob
     if (Caffe::root_solver()) {
       LOG(INFO) << layer_param->name() << " -> " << blob_name;
     }
     //创建共享指针
     shared_ptr<Blob<Dtype> > blob_pointer(new Blob<Dtype>());
-    const int blob_id = blobs_.size();//获取
+    const int blob_id = blobs_.size();//获取新建blob的index
     blobs_.push_back(blob_pointer);
     blob_names_.push_back(blob_name);
     blob_need_backward_.push_back(false);//是否需要反向计算
@@ -428,7 +428,7 @@ int Net<Dtype>::AppendBottom(
   }
   const int blob_id = (*blob_name_to_idx)[blob_name];
   LOG_IF(INFO, Caffe::root_solver())
-      << layer_names_[layer_id] << " <- " << blob_name;
+      << layer_names_[layer_id] << " <- " << blob_name;//输出对应的layer处理和Blob对应信息
   bottom_vecs_[layer_id].push_back(blobs_[blob_id].get());
   bottom_id_vecs_[layer_id].push_back(blob_id);
   available_blobs->erase(blob_name);
@@ -477,18 +477,18 @@ void Net<Dtype>::AppendParam(const NetParameter& param,
     // haven't already seen.
     //该层“拥有”此参数blob  - 它是匿名的（即，未给出param_name）或显式给出我们尚未看到的名称。
     param_owners_.push_back(-1);
-    //如果名字不为空
+    //如果名字不为空，查找名称对应的参数
     if (param_name.size()) {
       param_names_index_[param_name] = net_param_id;//获取参数id
     }
     //学习参数索引
     const int learnable_param_id = learnable_params_.size();//用最后一个做为index
-    learnable_params_.push_back(params_[net_param_id].get());
-    learnable_param_ids_.push_back(learnable_param_id);
-    has_params_lr_.push_back(param_spec->has_lr_mult());
+    learnable_params_.push_back(params_[net_param_id].get());//添加学习参数设置
+    learnable_param_ids_.push_back(learnable_param_id);//学习参数对应的id
+    has_params_lr_.push_back(param_spec->has_lr_mult());//是否
     has_params_decay_.push_back(param_spec->has_decay_mult());
     params_lr_.push_back(param_spec->lr_mult());
-    params_weight_decay_.push_back(param_spec->decay_mult());
+    params_weight_decay_.push_back(param_spec->decay_mult());//添加权重学习率
   } else {
     // Named param blob with name we've seen before: share params
     //在共享参数中看到过，则进行参数更改
@@ -536,7 +536,7 @@ void Net<Dtype>::AppendParam(const NetParameter& param,
             << "Shared param '" << param_name << "' has mismatched lr_mult.";
       } else {
         has_params_lr_[learnable_param_id] = true;
-        params_lr_[learnable_param_id] = param_spec->lr_mult();
+        params_lr_[learnable_param_id] = param_spec->lr_mult();//设置学习率
       }
     }
     //是否需要权重衰减

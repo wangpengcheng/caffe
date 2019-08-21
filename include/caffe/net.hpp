@@ -317,7 +317,7 @@ class Net {
   /// indexed by blob_id.
   vector<Dtype> blob_loss_weights_;// layer 的loss函数值
   //这些主要都是为了输出信息使用
-  vector<vector<int> > param_id_vecs_;//参数的idvector
+  vector<vector<int> > param_id_vecs_;//参数的 vector，大小由layer决定
   vector<int> param_owners_;//参数所有者
   vector<string> param_display_names_;//参数显示名称
   vector<pair<int, int> > param_layer_indices_;//
@@ -328,7 +328,7 @@ class Net {
   vector<Blob<Dtype>*> net_input_blobs_;
   vector<Blob<Dtype>*> net_output_blobs_;
   /// The parameters in the network.
-  vector<shared_ptr<Blob<Dtype> > > params_;//相关参数
+  vector<shared_ptr<Blob<Dtype> > > params_;//相关参数，这里主要用来计算层中定义的额外参数
   vector<Blob<Dtype>*> learnable_params_;//学习参数用Blob来进行存储
   /**
    * The mapping from params_ -> learnable_params_: we have
@@ -347,12 +347,12 @@ class Net {
   /// the learning rate multipliers for learnable_params_
   //learnable_params_的学习率乘数
   vector<float> params_lr_;
-  vector<bool> has_params_lr_;//是否需要乘数
+  vector<bool> has_params_lr_;//是否需要这个主要是学习率设置的 ；https://www.cnblogs.com/JZ-Ser/p/7150950.html
   /// the weight decay multipliers for learnable_params_ ；learnable_params_的重量衰减乘数
   vector<float> params_weight_decay_;//权重参数
   vector<bool> has_params_decay_;//是否衰减
   /// The bytes of memory used by this net
-  size_t memory_used_;//使用的内存量
+  size_t memory_used_;//使用的内存量,这里主要是对输入数据的维度进行的统计
   /// Whether to compute and display debug info for the net.
   bool debug_info_;
   // Callbacks

@@ -107,17 +107,17 @@ class Solver {
   virtual void SnapshotSolverState(const string& model_filename) = 0;
   virtual void RestoreSolverStateFromHDF5(const string& state_file) = 0;
   virtual void RestoreSolverStateFromBinaryProto(const string& state_file) = 0;
-  void DisplayOutputBlobs(const int net_id);
+  void DisplayOutputBlobs(const int net_id);//显示输出的blobs
   void UpdateSmoothedLoss(Dtype loss, int start_iter, int average_loss);
 
-  SolverParameter param_;
-  int iter_;
-  int current_step_;
-  shared_ptr<Net<Dtype> > net_;
-  vector<shared_ptr<Net<Dtype> > > test_nets_;
-  vector<Callback*> callbacks_;
-  vector<Dtype> losses_;
-  Dtype smoothed_loss_;
+  SolverParameter param_;//参数
+  int iter_;//迭代器
+  int current_step_;//当前步长
+  shared_ptr<Net<Dtype> > net_;//网络
+  vector<shared_ptr<Net<Dtype> > > test_nets_;//测试网络向量 
+  vector<Callback*> callbacks_;//回调函数
+  vector<Dtype> losses_;//loss值
+  Dtype smoothed_loss_;//smoothed loss
 
   // A function that can be set by a client of the Solver to provide indication
   // that it wants a snapshot saved and/or to exit early.
@@ -130,7 +130,7 @@ class Solver {
   Timer iteration_timer_;
   float iterations_last_;
 
-  DISABLE_COPY_AND_ASSIGN(Solver);
+  DISABLE_COPY_AND_ASSIGN(Solver);//禁止拷贝
 };
 
 }  // namespace caffe

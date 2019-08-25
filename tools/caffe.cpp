@@ -179,18 +179,18 @@ int train() {
   CHECK(!FLAGS_snapshot.size() || !FLAGS_weights.size())
       << "Give a snapshot to resume training or weights to finetune "
       "but not both.";
-  vector<string> stages = get_stages_from_flags();
+  vector<string> stages = get_stages_from_flags();//获取输入的参数，
 
   caffe::SolverParameter solver_param;
-  caffe::ReadSolverParamsFromTextFileOrDie(FLAGS_solver, &solver_param);
+  caffe::ReadSolverParamsFromTextFileOrDie(FLAGS_solver, &solver_param);//jaing solver.txt转换为solver_param
 
-  solver_param.mutable_train_state()->set_level(FLAGS_level);
+  solver_param.mutable_train_state()->set_level(FLAGS_level);//设置训练状态
   for (int i = 0; i < stages.size(); i++) {
     solver_param.mutable_train_state()->add_stage(stages[i]);
   }
 
   // If the gpus flag is not provided, allow the mode and device to be set
-  // in the solver prototxt.
+  // in the solver prototxt.//没有设置GPU时的默认设置
   if (FLAGS_gpu.size() == 0
       && solver_param.has_solver_mode()
       && solver_param.solver_mode() == caffe::SolverParameter_SolverMode_GPU) {
@@ -199,7 +199,7 @@ int train() {
           FLAGS_gpu = "" +
               boost::lexical_cast<string>(solver_param.device_id());
       } else {  // Set default GPU if unspecified
-          FLAGS_gpu = "" + boost::lexical_cast<string>(0);
+          FLAGS_gpu = "" + boost::lexical_cast<string>(0);//设置默认GPU为0
       }
   }
 
@@ -245,9 +245,9 @@ int train() {
   }
 
   shared_ptr<caffe::Solver<float> >
-      solver(caffe::SolverRegistry<float>::CreateSolver(solver_param));
+      solver(caffe::SolverRegistry<float>::CreateSolver(solver_param));//在这里创建solver，注意这里的输入参数是SolverRegistry注册后得到的其它种类的solver
 
-  solver->SetActionFunction(signal_handler.GetActionFunction());
+  solver->SetActionFunction(signal_handler.GetActionFunction());//设置状态,stop/pause等
 
   if (FLAGS_snapshot.size()) {
     LOG(INFO) << "Resuming from " << FLAGS_snapshot;
@@ -263,7 +263,7 @@ int train() {
     LOG(FATAL) << "Multi-GPU execution not available - rebuild with USE_NCCL";
 #endif
   } else {
-    solver->Solve();
+    solver->Solve();//开始执行solver
   }
   LOG(INFO) << "Optimization Done.";
   return 0;

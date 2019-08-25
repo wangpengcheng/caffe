@@ -85,7 +85,7 @@ class LayerRegistry {
     const string& type = param.type();
     //获取注册句柄
     CreatorRegistry& registry = Registry();
-    //输出信息
+    //查看是否错误
     CHECK_EQ(registry.count(type), 1) << "Unknown layer type: " << type
         << " (known types: " << LayerTypeListString() << ")";
     //返回layer

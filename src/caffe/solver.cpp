@@ -29,7 +29,7 @@ SolverAction::Enum Solver<Dtype>::GetRequestedAction() {
 template <typename Dtype>
 Solver<Dtype>::Solver(const SolverParameter& param)
     : net_(), callbacks_(), requested_early_exit_(false) {
-  Init(param);
+  Init(param);//获取初始化参数
 }
 
 template <typename Dtype>
@@ -44,7 +44,7 @@ template <typename Dtype>
 void Solver<Dtype>::Init(const SolverParameter& param) {
   LOG_IF(INFO, Caffe::root_solver()) << "Initializing solver from parameters: "
     << std::endl << param.DebugString();
-  param_ = param;
+  param_ = param;//获取参数
   CHECK_GE(param_.average_loss(), 1) << "average_loss should be non-negative.";
   CheckSnapshotWritePermissions();
   if (param_.random_seed() >= 0) {
@@ -77,8 +77,8 @@ void LoadNetWeights(shared_ptr<Net<Dtype> > net,
 template <typename Dtype>
 void Solver<Dtype>::InitTrainNet() {
   const int num_train_nets = param_.has_net() + param_.has_net_param() +
-      param_.has_train_net() + param_.has_train_net_param();
-  const string field_names = "net, net_param, train_net, train_net_param";
+      param_.has_train_net() + param_.has_train_net_param();//需要train的网络数量
+  const string field_names = "net, net_param, train_net, train_net_param";//检查级别
   CHECK_GE(num_train_nets, 1) << "SolverParameter must specify a train net "
       << "using one of these fields: " << field_names;
   CHECK_LE(num_train_nets, 1) << "SolverParameter must not contain more than "
@@ -87,7 +87,7 @@ void Solver<Dtype>::InitTrainNet() {
   if (param_.has_train_net_param()) {
     LOG_IF(INFO, Caffe::root_solver())
         << "Creating training net specified in train_net_param.";
-    net_param.CopyFrom(param_.train_net_param());
+    net_param.CopyFrom(param_.train_net_param());//拷贝网络参数
   } else if (param_.has_train_net()) {
     LOG_IF(INFO, Caffe::root_solver())
         << "Creating training net from train_net file: " << param_.train_net();
@@ -98,26 +98,27 @@ void Solver<Dtype>::InitTrainNet() {
         << "Creating training net specified in net_param.";
     net_param.CopyFrom(param_.net_param());
   }
-  if (param_.has_net()) {
+  if (param_.has_net()) {//查找是否有net文件
     LOG_IF(INFO, Caffe::root_solver())
         << "Creating training net from net file: " << param_.net();
-    ReadNetParamsFromTextFileOrDie(param_.net(), &net_param);
+    ReadNetParamsFromTextFileOrDie(param_.net(), &net_param);//读取lenet_train_test.prototxt
   }
   // Set the correct NetState.  We start with the solver defaults (lowest
   // precedence); then, merge in any NetState specified by the net_param itself;
   // finally, merge in any NetState specified by the train_state (highest
   // precedence).
   NetState net_state;
-  net_state.set_phase(TRAIN);
+  net_state.set_phase(TRAIN);//设置状态为train
   net_state.MergeFrom(net_param.state());
   net_state.MergeFrom(param_.train_state());
+  std::cout<<param_.DebugString()<<std::endl;
   net_param.mutable_state()->CopyFrom(net_state);
-  net_.reset(new Net<Dtype>(net_param));
-  for (int w_idx = 0; w_idx < param_.weights_size(); ++w_idx) {
+  net_.reset(new Net<Dtype>(net_param));//重新设置网络参数
+  for (int w_idx = 0; w_idx < param_.weights_size(); ++w_idx) {//当存在权重时加载权重
     LoadNetWeights(net_, param_.weights(w_idx));
   }
 }
-
+//初始化test网络
 template <typename Dtype>
 void Solver<Dtype>::InitTestNets() {
   const bool has_net_param = param_.has_net_param();
@@ -188,7 +189,7 @@ void Solver<Dtype>::InitTestNets() {
     }
     net_params[i].mutable_state()->CopyFrom(net_state);
     LOG(INFO)
-        << "Creating test net (#" << i << ") specified by " << sources[i];
+        << "Creating test net (#" << i << ") specified by " << sources[i];//创建测试网络
     test_nets_[i].reset(new Net<Dtype>(net_params[i]));
     test_nets_[i]->set_debug_info(param_.debug_info());
     for (int w_idx = 0; w_idx < param_.weights_size(); ++w_idx) {
@@ -299,8 +300,8 @@ void Solver<Dtype>::Solve(const char* resume_file) {
 
   // For a network that is trained by the solver, no bottom or top vecs
   // should be given, and we will just provide dummy vecs.
-  int start_iter = iter_;
-  Step(param_.max_iter() - iter_);
+  int start_iter = iter_;//获取当前的迭代步长
+  Step(param_.max_iter() - iter_);//开始迭代
   // If we haven't already, save a snapshot after optimization, unless
   // overridden by setting snapshot_after_train := false
   if (param_.snapshot_after_train()

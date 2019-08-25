@@ -302,7 +302,7 @@ class Net {
   /// @brief the blobs storing intermediate results between the layer.
   vector<shared_ptr<Blob<Dtype> > > blobs_;//blob 
   vector<string> blob_names_;
-  map<string, int> blob_names_index_;//blob索引
+  map<string, int> blob_names_index_;//blob names索引
   vector<bool> blob_need_backward_;//是否需要反向计算
   /// bottom_vecs stores the vectors containing the input for each layer.
   /// They don't actually host the blobs (blobs_ does), so we simply store

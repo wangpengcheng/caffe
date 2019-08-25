@@ -72,7 +72,7 @@ Dtype SGDSolver<Dtype>::GetLearningRate() {
 template <typename Dtype>
 void SGDSolver<Dtype>::PreSolve() {
   // Initialize the history
-  const vector<Blob<Dtype>*>& net_params = this->net_->learnable_params();
+  const vector<Blob<Dtype>*>& net_params = this->net_->learnable_params();//获取网络的所有学习参数
   history_.clear();
   update_.clear();
   temp_.clear();
@@ -369,7 +369,7 @@ void SGDSolver<Dtype>::RestoreSolverStateFromHDF5(const string& state_file) {
 #endif  // USE_HDF5
 }
 
-INSTANTIATE_CLASS(SGDSolver);
-REGISTER_SOLVER_CLASS(SGD);
+INSTANTIATE_CLASS(SGDSolver); 
+REGISTER_SOLVER_CLASS(SGD);//注册SGDsolver function指针
 
 }  // namespace caffe

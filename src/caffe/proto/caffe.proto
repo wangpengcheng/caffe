@@ -271,7 +271,7 @@ message SolverParameter {
     ADAM = 5;
   }
   // DEPRECATED: use type instead of solver_type
-  optional SolverType solver_type = 30 [default = SGD];
+  optional SolverType solver_type = 30 [default = SGD];//默认的方式是SGD
 
   // Overlap compute and communication for data parallel training
   optional bool layer_wise_reduce = 41 [default = true];

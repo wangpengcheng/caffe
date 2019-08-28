@@ -56,8 +56,8 @@ void Solver<Dtype>::Init(const SolverParameter& param) {
   if (Caffe::root_solver()) {
     LOG(INFO) << "Solver scaffolding done.";
   }
-  iter_ = 0;
-  current_step_ = 0;
+  iter_ = 0;//设置当前迭代索引
+  current_step_ = 0;//设置当前所在的迭代步索引
 }
 
 // Load weights from the caffemodel(s) specified in "weights" solver parameter
@@ -153,7 +153,7 @@ void Solver<Dtype>::InitTestNets() {
   int test_net_id = 0;
   vector<string> sources(num_test_net_instances);
   vector<NetParameter> net_params(num_test_net_instances);
-  for (int i = 0; i < num_test_net_params; ++i, ++test_net_id) {
+  for (int i = 0; i < num_test_net_params; ++i, ++test_net_id) {//将net的参数拷贝到net数组中
       sources[test_net_id] = "test_net_param";
       net_params[test_net_id].CopyFrom(param_.test_net_param(i));
   }
@@ -162,17 +162,17 @@ void Solver<Dtype>::InitTestNets() {
       ReadNetParamsFromTextFileOrDie(param_.test_net(i),
           &net_params[test_net_id]);
   }
-  const int remaining_test_nets = param_.test_iter_size() - test_net_id;
+  const int remaining_test_nets = param_.test_iter_size() - test_net_id;//保持测试的网络数目
   if (has_net_param) {
     for (int i = 0; i < remaining_test_nets; ++i, ++test_net_id) {
       sources[test_net_id] = "net_param";
       net_params[test_net_id].CopyFrom(param_.net_param());
     }
   }
-  if (has_net_file) {
+  if (has_net_file) {//如果存在netfile
     for (int i = 0; i < remaining_test_nets; ++i, ++test_net_id) {
-      sources[test_net_id] = "net file: " + param_.net();
-      ReadNetParamsFromTextFileOrDie(param_.net(), &net_params[test_net_id]);
+      sources[test_net_id] = "net file: " + param_.net();//获取net file的文件路径
+      ReadNetParamsFromTextFileOrDie(param_.net(), &net_params[test_net_id]);//读取文件
     }
   }
   test_nets_.resize(num_test_net_instances);
@@ -190,8 +190,8 @@ void Solver<Dtype>::InitTestNets() {
     net_params[i].mutable_state()->CopyFrom(net_state);
     LOG(INFO)
         << "Creating test net (#" << i << ") specified by " << sources[i];//创建测试网络
-    test_nets_[i].reset(new Net<Dtype>(net_params[i]));
-    test_nets_[i]->set_debug_info(param_.debug_info());
+    test_nets_[i].reset(new Net<Dtype>(net_params[i]));//重新设置网络参数
+    test_nets_[i]->set_debug_info(param_.debug_info());//设置debug信息
     for (int w_idx = 0; w_idx < param_.weights_size(); ++w_idx) {
       LoadNetWeights(test_nets_[i], param_.weights(w_idx));
     }
@@ -200,20 +200,20 @@ void Solver<Dtype>::InitTestNets() {
 
 template <typename Dtype>
 void Solver<Dtype>::Step(int iters) {
-  const int start_iter = iter_;
-  const int stop_iter = iter_ + iters;
-  int average_loss = this->param_.average_loss();
+  const int start_iter = iter_;//开始迭代index
+  const int stop_iter = iter_ + iters;//终止迭代index
+  int average_loss = this->param_.average_loss();//平均loss值
   losses_.clear();
   smoothed_loss_ = 0;
-  iteration_timer_.Start();
+  iteration_timer_.Start();//开启cpu计时器
 
-  while (iter_ < stop_iter) {
+  while (iter_ < stop_iter) {//进行迭代直到满足条件
     // zero-init the params
-    net_->ClearParamDiffs();
+    net_->ClearParamDiffs();//重新初始化diff
     if (param_.test_interval() && iter_ % param_.test_interval() == 0
-        && (iter_ > 0 || param_.test_initialization())) {
+        && (iter_ > 0 || param_.test_initialization())) {//判断条件开始测试
       if (Caffe::root_solver()) {
-        TestAll();
+        TestAll();//进行所有测试
       }
       if (requested_early_exit_) {
         // Break out of the while loop because stop was requested while testing.
@@ -287,13 +287,13 @@ void Solver<Dtype>::Step(int iters) {
 template <typename Dtype>
 void Solver<Dtype>::Solve(const char* resume_file) {
   CHECK(Caffe::root_solver());
-  LOG(INFO) << "Solving " << net_->name();
-  LOG(INFO) << "Learning Rate Policy: " << param_.lr_policy();
+  LOG(INFO) << "Solving " << net_->name();//输出网络名称
+  LOG(INFO) << "Learning Rate Policy: " << param_.lr_policy();//输出学习率
 
   // Initialize to false every time we start solving.
-  requested_early_exit_ = false;
+  requested_early_exit_ = false;//将请求提前结束设置为false
 
-  if (resume_file) {
+  if (resume_file) {//存储数据文件
     LOG(INFO) << "Restoring previous solver status from " << resume_file;
     Restore(resume_file);
   }
@@ -301,7 +301,7 @@ void Solver<Dtype>::Solve(const char* resume_file) {
   // For a network that is trained by the solver, no bottom or top vecs
   // should be given, and we will just provide dummy vecs.
   int start_iter = iter_;//获取当前的迭代步长
-  Step(param_.max_iter() - iter_);//开始迭代
+  Step(param_.max_iter() - iter_);//设置这次的最终目标步长
   // If we haven't already, save a snapshot after optimization, unless
   // overridden by setting snapshot_after_train := false
   if (param_.snapshot_after_train()
@@ -337,8 +337,8 @@ template <typename Dtype>
 void Solver<Dtype>::TestAll() {
   for (int test_net_id = 0;
        test_net_id < test_nets_.size() && !requested_early_exit_;
-       ++test_net_id) {
-    Test(test_net_id);
+       ++test_net_id) {//遍历每一个test net 进行测试
+    Test(test_net_id);//测试这个网络
   }
 }
 
@@ -346,21 +346,21 @@ template <typename Dtype>
 void Solver<Dtype>::Test(const int test_net_id) {
   CHECK(Caffe::root_solver());
   LOG(INFO) << "Iteration " << iter_
-            << ", Testing net (#" << test_net_id << ")";
+            << ", Testing net (#" << test_net_id << ")";//输出迭代信息和测试的网络信息
   CHECK_NOTNULL(test_nets_[test_net_id].get())->
-      ShareTrainedLayersWith(net_.get());
-  vector<Dtype> test_score;
-  vector<int> test_score_output_id;
-  const shared_ptr<Net<Dtype> >& test_net = test_nets_[test_net_id];
+      ShareTrainedLayersWith(net_.get());//获取共享层
+  vector<Dtype> test_score;//测试分数
+  vector<int> test_score_output_id;//测试id
+  const shared_ptr<Net<Dtype> >& test_net = test_nets_[test_net_id];//测试网络
   Dtype loss = 0;
   for (int i = 0; i < param_.test_iter(test_net_id); ++i) {
     SolverAction::Enum request = GetRequestedAction();
     // Check to see if stoppage of testing/training has been requested.
-    while (request != SolverAction::NONE) {
+    while (request != SolverAction::NONE) {//查看是否测试中或者停止
         if (SolverAction::SNAPSHOT == request) {
           Snapshot();
         } else if (SolverAction::STOP == request) {
-          requested_early_exit_ = true;
+          requested_early_exit_ = true;//设置请求停止为true
         }
         request = GetRequestedAction();
     }
@@ -371,16 +371,16 @@ void Solver<Dtype>::Test(const int test_net_id) {
 
     Dtype iter_loss;
     const vector<Blob<Dtype>*>& result =
-        test_net->Forward(&iter_loss);
-    if (param_.test_compute_loss()) {
+        test_net->Forward(&iter_loss);//进行网络的前向计算
+    if (param_.test_compute_loss()) {//是否贼test是计算loss
       loss += iter_loss;
     }
-    if (i == 0) {
+    if (i == 0) {//如果是第一次迭代
       for (int j = 0; j < result.size(); ++j) {
-        const Dtype* result_vec = result[j]->cpu_data();
+        const Dtype* result_vec = result[j]->cpu_data();//获取前向计算的cpu数据
         for (int k = 0; k < result[j]->count(); ++k) {
-          test_score.push_back(result_vec[k]);
-          test_score_output_id.push_back(j);
+          test_score.push_back(result_vec[k]);//添加测试分数
+          test_score_output_id.push_back(j);//添加
         }
       }
     } else {
@@ -418,12 +418,12 @@ void Solver<Dtype>::Test(const int test_net_id) {
 }
 
 template <typename Dtype>
-void Solver<Dtype>::Snapshot() {
+void Solver<Dtype>::Snapshot() {//进行闪照
   CHECK(Caffe::root_solver());
   string model_filename;
-  switch (param_.snapshot_format()) {
+  switch (param_.snapshot_format()) {//闪照文件类型
   case caffe::SolverParameter_SnapshotFormat_BINARYPROTO:
-    model_filename = SnapshotToBinaryProto();
+    model_filename = SnapshotToBinaryProto();//进行存储
     break;
   case caffe::SolverParameter_SnapshotFormat_HDF5:
     model_filename = SnapshotToHDF5();
@@ -460,13 +460,13 @@ string Solver<Dtype>::SnapshotFilename(const string& extension) {
 }
 
 template <typename Dtype>
-string Solver<Dtype>::SnapshotToBinaryProto() {
+string Solver<Dtype>::SnapshotToBinaryProto() {//获取二进制文件名称
   string model_filename = SnapshotFilename(".caffemodel");
   LOG(INFO) << "Snapshotting to binary proto file " << model_filename;
   NetParameter net_param;
-  net_->ToProto(&net_param, param_.snapshot_diff());
-  WriteProtoToBinaryFile(net_param, model_filename);
-  return model_filename;
+  net_->ToProto(&net_param, param_.snapshot_diff());//将参数填充到net_param中
+  WriteProtoToBinaryFile(net_param, model_filename);//写入相关文件
+  return model_filename;//模型名称
 }
 
 template <typename Dtype>

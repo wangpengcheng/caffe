@@ -552,7 +552,7 @@ void Net<Dtype>::AppendParam(const NetParameter& param,
     }
   }
 }
-
+//网络前向计算
 template <typename Dtype>
 Dtype Net<Dtype>::ForwardFromTo(int start, int end) {
   CHECK_GE(start, 0);
@@ -562,7 +562,7 @@ Dtype Net<Dtype>::ForwardFromTo(int start, int end) {
     for (int c = 0; c < before_forward_.size(); ++c) {
       before_forward_[c]->run(i);
     }
-    Dtype layer_loss = layers_[i]->Forward(bottom_vecs_[i], top_vecs_[i]);
+    Dtype layer_loss = layers_[i]->Forward(bottom_vecs_[i], top_vecs_[i]);//获取这个层的loss值
     loss += layer_loss;
     //debug输出前向信息
     if (debug_info_) { ForwardDebugInfo(i); }
@@ -582,7 +582,7 @@ template <typename Dtype>
 Dtype Net<Dtype>::ForwardTo(int end) {
   return ForwardFromTo(0, end);
 }
-
+//网络前向计算
 template <typename Dtype>
 const vector<Blob<Dtype>*>& Net<Dtype>::Forward(Dtype* loss) {
   if (loss != NULL) {
@@ -625,7 +625,7 @@ void Net<Dtype>::BackwardFromTo(int start, int end) {
 }
 
 template <typename Dtype>
-void Net<Dtype>::ForwardDebugInfo(const int layer_id) {
+void Net<Dtype>::ForwardDebugInfo(const int layer_id) {//输出网络前向计算信息
   for (int top_id = 0; top_id < top_vecs_[layer_id].size(); ++top_id) {
     const Blob<Dtype>& blob = *top_vecs_[layer_id][top_id];
     const string& blob_name = blob_names_[top_id_vecs_[layer_id][top_id]];

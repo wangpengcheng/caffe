@@ -249,7 +249,7 @@ int train() {
 
   solver->SetActionFunction(signal_handler.GetActionFunction());//设置状态,stop/pause等
 
-  if (FLAGS_snapshot.size()) {
+  if (FLAGS_snapshot.size()) {//输出暂存的size
     LOG(INFO) << "Resuming from " << FLAGS_snapshot;
     solver->Restore(FLAGS_snapshot.c_str());
   }

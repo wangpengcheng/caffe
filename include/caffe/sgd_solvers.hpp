@@ -13,7 +13,7 @@ namespace caffe {
  *        stochastic gradient descent (SGD) with momentum.
  */
 template <typename Dtype>
-class SGDSolver : public Solver<Dtype> {
+class SGDSolver : public Solver<Dtype> {//继承了solver公有类的方法，包括初始构造函数
  public:
   explicit SGDSolver(const SolverParameter& param)
       : Solver<Dtype>(param) { PreSolve(); }//构造函数
@@ -40,8 +40,11 @@ class SGDSolver : public Solver<Dtype> {
   // history maintains the historical momentum data.
   // update maintains update related data and is not needed in snapshots.
   // temp maintains other information that might be needed in computation
-  //   of gradients/updates and is not needed in snapshots
-  vector<shared_ptr<Blob<Dtype> > > history_, update_, temp_;
+  //   of gradients/updates and is not needed in snapshots //历史保留历史动量数据。
+   // update维护更新相关数据，快照中不需要。
+   // temp维护计算中可能需要的其他信息
+   //渐变/更新，快照中不需要
+  vector<shared_ptr<Blob<Dtype> > > history_, update_, temp_;//
 
   DISABLE_COPY_AND_ASSIGN(SGDSolver);
 };

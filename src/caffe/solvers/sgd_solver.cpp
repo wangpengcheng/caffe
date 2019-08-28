@@ -70,13 +70,13 @@ Dtype SGDSolver<Dtype>::GetLearningRate() {
 }
 
 template <typename Dtype>
-void SGDSolver<Dtype>::PreSolve() {
+void SGDSolver<Dtype>::PreSolve() {//注意这里要先调用solver的构造函数
   // Initialize the history
   const vector<Blob<Dtype>*>& net_params = this->net_->learnable_params();//获取网络的所有学习参数
-  history_.clear();
+  history_.clear();//清除历史信息
   update_.clear();
   temp_.clear();
-  for (int i = 0; i < net_params.size(); ++i) {
+  for (int i = 0; i < net_params.size(); ++i) {//为暂时存储对象分配内存
     const vector<int>& shape = net_params[i]->shape();
     history_.push_back(shared_ptr<Blob<Dtype> >(new Blob<Dtype>(shape)));
     update_.push_back(shared_ptr<Blob<Dtype> >(new Blob<Dtype>(shape)));

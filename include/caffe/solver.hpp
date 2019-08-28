@@ -9,7 +9,7 @@
 #include "caffe/util/benchmark.hpp"
 
 namespace caffe {
-
+//https://blog.csdn.net/cyh_24/article/details/51537709
 /**
   * @brief Enumeration of actions that a client of the Solver may request by
   * implementing the Solver's action request function, which a

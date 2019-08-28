@@ -463,8 +463,8 @@ inline Dtype Layer<Dtype>::Forward(const vector<Blob<Dtype>*>& bottom,
   Reshape(bottom, top);
   switch (Caffe::mode()) {
   case Caffe::CPU:
-    Forward_cpu(bottom, top);
-    for (int top_id = 0; top_id < top.size(); ++top_id) {
+    Forward_cpu(bottom, top);//cpu前向计算
+    for (int top_id = 0; top_id < top.size(); ++top_id) {//遍历top 计算loss
       if (!this->loss(top_id)) { continue; }
       const int count = top[top_id]->count();
       const Dtype* data = top[top_id]->cpu_data();

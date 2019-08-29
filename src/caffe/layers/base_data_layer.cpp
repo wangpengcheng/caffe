@@ -118,7 +118,7 @@ void BasePrefetchingDataLayer<Dtype>::Forward_cpu(
   prefetch_current_ = prefetch_full_.pop("Waiting for data");
   // Reshape to loaded data.//重设大小去加载数据
   top[0]->ReshapeLike(prefetch_current_->data_);
-  top[0]->set_cpu_data(prefetch_current_->data_.mutable_cpu_data());
+  top[0]->set_cpu_data(prefetch_current_->data_.mutable_cpu_data());//获取cpu数据纸盒子呢
   if (this->output_labels_) {//如果存在label标签
     // Reshape to loaded labels.
     top[1]->ReshapeLike(prefetch_current_->label_);

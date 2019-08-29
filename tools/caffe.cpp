@@ -249,13 +249,13 @@ int train() {
 
   solver->SetActionFunction(signal_handler.GetActionFunction());//设置状态,stop/pause等
 
-  if (FLAGS_snapshot.size()) {//输出暂存的size
+  if (FLAGS_snapshot.size()) {//输出闪照大小，如果有的化
     LOG(INFO) << "Resuming from " << FLAGS_snapshot;
     solver->Restore(FLAGS_snapshot.c_str());
   }
 
   LOG(INFO) << "Starting Optimization";
-  if (gpus.size() > 1) {
+  if (gpus.size() > 1) {//gpu数量>1使用NCCL
 #ifdef USE_NCCL
     caffe::NCCL<float> nccl(solver);
     nccl.Run(gpus, FLAGS_snapshot.size() > 0 ? FLAGS_snapshot.c_str() : NULL);

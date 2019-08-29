@@ -46,7 +46,7 @@ void Solver<Dtype>::Init(const SolverParameter& param) {
     << std::endl << param.DebugString();
   param_ = param;//获取参数
   CHECK_GE(param_.average_loss(), 1) << "average_loss should be non-negative.";
-  CheckSnapshotWritePermissions();
+  CheckSnapshotWritePermissions();//确认闪照是否允许
   if (param_.random_seed() >= 0) {
     Caffe::set_random_seed(param_.random_seed() + Caffe::solver_rank());
   }
@@ -118,7 +118,7 @@ void Solver<Dtype>::InitTrainNet() {
     LoadNetWeights(net_, param_.weights(w_idx));
   }
 }
-//初始化test网络
+//初始化test网络和上面的train网络基本相同
 template <typename Dtype>
 void Solver<Dtype>::InitTestNets() {
   const bool has_net_param = param_.has_net_param();
@@ -157,7 +157,7 @@ void Solver<Dtype>::InitTestNets() {
       sources[test_net_id] = "test_net_param";
       net_params[test_net_id].CopyFrom(param_.test_net_param(i));
   }
-  for (int i = 0; i < num_test_net_files; ++i, ++test_net_id) {
+  for (int i = 0; i < num_test_net_files; ++i, ++test_net_id) {//从文件中获取信息
       sources[test_net_id] = "test_net file: " + param_.test_net(i);
       ReadNetParamsFromTextFileOrDie(param_.test_net(i),
           &net_params[test_net_id]);
@@ -175,8 +175,8 @@ void Solver<Dtype>::InitTestNets() {
       ReadNetParamsFromTextFileOrDie(param_.net(), &net_params[test_net_id]);//读取文件
     }
   }
-  test_nets_.resize(num_test_net_instances);
-  for (int i = 0; i < num_test_net_instances; ++i) {
+  test_nets_.resize(num_test_net_instances);//重新设置测试网络的大小
+  for (int i = 0; i < num_test_net_instances; ++i) {//遍历文件创建测试网络
     // Set the correct NetState.  We start with the solver defaults (lowest
     // precedence); then, merge in any NetState specified by the net_param
     // itself; finally, merge in any NetState specified by the test_state
@@ -203,7 +203,7 @@ void Solver<Dtype>::Step(int iters) {
   const int start_iter = iter_;//开始迭代index
   const int stop_iter = iter_ + iters;//终止迭代index
   int average_loss = this->param_.average_loss();//平均loss值
-  losses_.clear();
+  losses_.clear();//清除loss
   smoothed_loss_ = 0;
   iteration_timer_.Start();//开启cpu计时器
 
@@ -306,7 +306,7 @@ void Solver<Dtype>::Solve(const char* resume_file) {
   // overridden by setting snapshot_after_train := false
   if (param_.snapshot_after_train()
       && (!param_.snapshot() || iter_ % param_.snapshot() != 0)) {
-    Snapshot();
+    Snapshot();//训练完成后进行闪照
   }
   if (requested_early_exit_) {
     LOG(INFO) << "Optimization stopped early.";
@@ -341,7 +341,7 @@ void Solver<Dtype>::TestAll() {
     Test(test_net_id);//测试这个网络
   }
 }
-
+//根据网络id进行测试
 template <typename Dtype>
 void Solver<Dtype>::Test(const int test_net_id) {
   CHECK(Caffe::root_solver());
@@ -372,23 +372,23 @@ void Solver<Dtype>::Test(const int test_net_id) {
     Dtype iter_loss;
     const vector<Blob<Dtype>*>& result =
         test_net->Forward(&iter_loss);//进行网络的前向计算
-    if (param_.test_compute_loss()) {//是否贼test是计算loss
+    if (param_.test_compute_loss()) {//是否计算test过程中的loss
       loss += iter_loss;
     }
-    if (i == 0) {//如果是第一次迭代
+    if (i == 0) {//如果是第一次迭代，需要存储一下测试结果
       for (int j = 0; j < result.size(); ++j) {
-        const Dtype* result_vec = result[j]->cpu_data();//获取前向计算的cpu数据
+        const Dtype* result_vec = result[j]->cpu_data();//获取前向计算的cpu数据 一般测试有两个输出层，accuracy 和loss，最后存储在test_score中
         for (int k = 0; k < result[j]->count(); ++k) {
           test_score.push_back(result_vec[k]);//添加测试分数
-          test_score_output_id.push_back(j);//添加
+          test_score_output_id.push_back(j);//添加输出的id
         }
       }
-    } else {
+    } else {//否则直接向下
       int idx = 0;
       for (int j = 0; j < result.size(); ++j) {
         const Dtype* result_vec = result[j]->cpu_data();
         for (int k = 0; k < result[j]->count(); ++k) {
-          test_score[idx++] += result_vec[k];
+          test_score[idx++] += result_vec[k];//累计准确度
         }
       }
     }

@@ -555,14 +555,14 @@ void Net<Dtype>::AppendParam(const NetParameter& param,
 //网络前向计算
 template <typename Dtype>
 Dtype Net<Dtype>::ForwardFromTo(int start, int end) {
-  CHECK_GE(start, 0);
-  CHECK_LT(end, layers_.size());
-  Dtype loss = 0;
+  CHECK_GE(start, 0);//确认start>0
+  CHECK_LT(end, layers_.size());//确认end<layer.size()
+  Dtype loss = 0;//设置loss值为0，前向计算过程中loss重制为0
   for (int i = start; i <= end; ++i) {
-    for (int c = 0; c < before_forward_.size(); ++c) {
+    for (int c = 0; c < before_forward_.size(); ++c) {//计算before_forward_主要是NCCL中进行计算，
       before_forward_[c]->run(i);
     }
-    Dtype layer_loss = layers_[i]->Forward(bottom_vecs_[i], top_vecs_[i]);//获取这个层的loss值
+    Dtype layer_loss = layers_[i]->Forward(bottom_vecs_[i], top_vecs_[i]);//获取这个层的loss值，
     loss += layer_loss;
     //debug输出前向信息
     if (debug_info_) { ForwardDebugInfo(i); }
@@ -570,7 +570,7 @@ Dtype Net<Dtype>::ForwardFromTo(int start, int end) {
       after_forward_[c]->run(i);
     }
   }
-  return loss;
+  return loss;//第一次计算loss在最后才更新
 }
 //前向计算
 template <typename Dtype>
@@ -626,18 +626,18 @@ void Net<Dtype>::BackwardFromTo(int start, int end) {
 
 template <typename Dtype>
 void Net<Dtype>::ForwardDebugInfo(const int layer_id) {//输出网络前向计算信息
-  for (int top_id = 0; top_id < top_vecs_[layer_id].size(); ++top_id) {
+  for (int top_id = 0; top_id < top_vecs_[layer_id].size(); ++top_id) {//遍历top blob
     const Blob<Dtype>& blob = *top_vecs_[layer_id][top_id];
     const string& blob_name = blob_names_[top_id_vecs_[layer_id][top_id]];
-    const Dtype data_abs_val_mean = blob.asum_data() / blob.count();
-    LOG_IF(INFO, Caffe::root_solver())
+    const Dtype data_abs_val_mean = blob.asum_data() / blob.count();//计算blob中每个数据的绝对均值
+    LOG_IF(INFO, Caffe::root_solver())//打印输出相关信息
         << "    [Forward] "
         << "Layer " << layer_names_[layer_id]
         << ", top blob " << blob_name
         << " data: " << data_abs_val_mean;
   }
   for (int param_id = 0; param_id < layers_[layer_id]->blobs().size();
-       ++param_id) {
+       ++param_id) {//答应输出blob信息，这里主要是layer的相关参数
     const Blob<Dtype>& blob = *layers_[layer_id]->blobs()[param_id];
     const int net_param_id = param_id_vecs_[layer_id][param_id];
     const string& blob_name = param_display_names_[net_param_id];

@@ -223,7 +223,7 @@ Dtype Blob<Dtype>::asum_data() const {
   if (!data_) { return 0; }
   switch (data_->head()) {
   case SyncedMemory::HEAD_AT_CPU:
-    return caffe_cpu_asum(count_, cpu_data());
+    return caffe_cpu_asum(count_, cpu_data());//计算所有数据的和
   case SyncedMemory::HEAD_AT_GPU:
   case SyncedMemory::SYNCED:
 #ifndef CPU_ONLY

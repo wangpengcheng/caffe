@@ -356,7 +356,7 @@ class Net {
   /// Whether to compute and display debug info for the net.
   bool debug_info_;
   // Callbacks
-  //回调函数；主要是与nccl配合使用
+  //回调函数；在进行前向计算后使用
   vector<Callback*> before_forward_;
   vector<Callback*> after_forward_;
   vector<Callback*> before_backward_;

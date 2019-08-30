@@ -557,7 +557,7 @@ template <typename Dtype>
 Dtype Net<Dtype>::ForwardFromTo(int start, int end) {
   CHECK_GE(start, 0);//确认start>0
   CHECK_LT(end, layers_.size());//确认end<layer.size()
-  Dtype loss = 0;//设置loss值为0，前向计算过程中loss重制为0
+  Dtype loss = 0;//设置loss值为0，前向计算过程中loss重制为0，每次前向计算都需要重新设置loss值
   for (int i = start; i <= end; ++i) {
     for (int c = 0; c < before_forward_.size(); ++c) {//计算before_forward_主要是NCCL中进行计算，
       before_forward_[c]->run(i);
@@ -586,11 +586,11 @@ Dtype Net<Dtype>::ForwardTo(int end) {
 template <typename Dtype>
 const vector<Blob<Dtype>*>& Net<Dtype>::Forward(Dtype* loss) {
   if (loss != NULL) {
-    *loss = ForwardFromTo(0, layers_.size() - 1);
+    *loss = ForwardFromTo(0, layers_.size() - 1);//计算所有layer的前向结果，保存到loss中
   } else {
-    ForwardFromTo(0, layers_.size() - 1);
+    ForwardFromTo(0, layers_.size() - 1);//先调用前向计算函数，得到loss初始值
   }
-  return net_output_blobs_;
+  return net_output_blobs_;//返回输出的blob指针，包含了输出的结果
 }
 
 template <typename Dtype>
@@ -604,7 +604,7 @@ const vector<Blob<Dtype>*>& Net<Dtype>::Forward(
   }
   return Forward(loss);//返回前向计算的loss
 }
-
+//反向迭代器计算
 template <typename Dtype>
 void Net<Dtype>::BackwardFromTo(int start, int end) {
   CHECK_GE(end, 0);
@@ -613,9 +613,9 @@ void Net<Dtype>::BackwardFromTo(int start, int end) {
     for (int c = 0; c < before_backward_.size(); ++c) {
       before_backward_[c]->run(i);
     }
-    if (layer_need_backward_[i]) {
+    if (layer_need_backward_[i]) {//layer是否需要反向计算，在lenet中出了，data都需要
       layers_[i]->Backward(
-          top_vecs_[i], bottom_need_backward_[i], bottom_vecs_[i]);
+          top_vecs_[i], bottom_need_backward_[i], bottom_vecs_[i]);//进行反向迭代计算
       if (debug_info_) { BackwardDebugInfo(i); }
     }
     for (int c = 0; c < after_backward_.size(); ++c) {
@@ -653,7 +653,7 @@ void Net<Dtype>::ForwardDebugInfo(const int layer_id) {//输出网络前向计�
 template <typename Dtype>
 void Net<Dtype>::BackwardDebugInfo(const int layer_id) {
   const vector<Blob<Dtype>*>& bottom_vec = bottom_vecs_[layer_id];
-  for (int bottom_id = 0; bottom_id < bottom_vec.size(); ++bottom_id) {
+  for (int bottom_id = 0; bottom_id < bottom_vec.size(); ++bottom_id) {//输出blobd diff信息
     if (!bottom_need_backward_[layer_id][bottom_id]) { continue; }
     const Blob<Dtype>& blob = *bottom_vec[bottom_id];
     const string& blob_name = blob_names_[bottom_id_vecs_[layer_id][bottom_id]];
@@ -665,7 +665,7 @@ void Net<Dtype>::BackwardDebugInfo(const int layer_id) {
         << " diff: " << diff_abs_val_mean;
   }
   for (int param_id = 0; param_id < layers_[layer_id]->blobs().size();
-       ++param_id) {
+       ++param_id) {//输出layer中的其它数据信息
     if (!layers_[layer_id]->param_propagate_down(param_id)) { continue; }
     const Blob<Dtype>& blob = *layers_[layer_id]->blobs()[param_id];
     const Dtype diff_abs_val_mean = blob.asum_diff() / blob.count();
@@ -744,10 +744,10 @@ template <typename Dtype>
 void Net<Dtype>::BackwardTo(int end) {
   BackwardFromTo(layers_.size() - 1, end);
 }
-
+//反向迭代计算
 template <typename Dtype>
 void Net<Dtype>::Backward() {
-  BackwardFromTo(layers_.size() - 1, 0);
+  BackwardFromTo(layers_.size() - 1, 0);//反向迭代，从最后一个到第一个
   if (debug_info_) {
     Dtype asum_data = 0, asum_diff = 0, sumsq_data = 0, sumsq_diff = 0;
     for (int i = 0; i < learnable_params_.size(); ++i) {

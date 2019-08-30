@@ -134,12 +134,12 @@ void SyncedMemory::set_gpu_data(void* data) {
   NO_GPU;
 #endif
 }
-
+//获取cpu数据
 void* SyncedMemory::mutable_cpu_data() {
-  check_device();
-  to_cpu();
-  head_ = HEAD_AT_CPU;
-  return cpu_ptr_;
+  check_device();//确认模式
+  to_cpu();//转移内存
+  head_ = HEAD_AT_CPU;//设置head_模式
+  return cpu_ptr_;//返回cpu指针
 }
 //数据同步到gpu
 void* SyncedMemory::mutable_gpu_data() {

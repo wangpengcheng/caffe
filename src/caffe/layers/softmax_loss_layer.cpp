@@ -54,7 +54,7 @@ void SoftmaxWithLossLayer<Dtype>::Reshape(
     top[1]->ReshapeLike(*bottom[0]);
   }
 }
-
+//将值标准化
 template <typename Dtype>
 Dtype SoftmaxWithLossLayer<Dtype>::get_normalizer(
     LossParameter_NormalizationMode normalization_mode, int valid_count) {
@@ -64,7 +64,7 @@ Dtype SoftmaxWithLossLayer<Dtype>::get_normalizer(
       normalizer = Dtype(outer_num_ * inner_num_);
       break;
     case LossParameter_NormalizationMode_VALID:
-      if (valid_count == -1) {
+      if (valid_count == -1) {//不存在标签
         normalizer = Dtype(outer_num_ * inner_num_);
       } else {
         normalizer = Dtype(valid_count);
@@ -82,7 +82,7 @@ Dtype SoftmaxWithLossLayer<Dtype>::get_normalizer(
   }
   // Some users will have no labels for some examples in order to 'turn off' a
   // particular loss in a multi-task setup. The max prevents NaNs in that case.
-  return std::max(Dtype(1.0), normalizer);
+  return std::max(Dtype(1.0), normalizer);//查找最大值
 }
 
 template <typename Dtype>
@@ -113,7 +113,7 @@ void SoftmaxWithLossLayer<Dtype>::Forward_cpu(
     top[1]->ShareData(prob_);
   }
 }
-
+//SoftmaxWithLoss layer的反向迭代计算，一般loss是反向迭代计算的第一个
 template <typename Dtype>
 void SoftmaxWithLossLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
     const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {
@@ -122,30 +122,29 @@ void SoftmaxWithLossLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
                << " Layer cannot backpropagate to label inputs.";
   }
   if (propagate_down[0]) {
-    Dtype* bottom_diff = bottom[0]->mutable_cpu_diff();
-    const Dtype* prob_data = prob_.cpu_data();
+    Dtype* bottom_diff = bottom[0]->mutable_cpu_diff();//获取bottom diff指针
+    const Dtype* prob_data = prob_.cpu_data();//获取预测的概率数据
     caffe_copy(prob_.count(), prob_data, bottom_diff);
     const Dtype* label = bottom[1]->cpu_data();
-    int dim = prob_.count() / outer_num_;
+    int dim = prob_.count() / outer_num_;//输出维度
     int count = 0;
-    for (int i = 0; i < outer_num_; ++i) {
-      for (int j = 0; j < inner_num_; ++j) {
-        const int label_value = static_cast<int>(label[i * inner_num_ + j]);
-        if (has_ignore_label_ && label_value == ignore_label_) {
-          for (int c = 0; c < bottom[0]->shape(softmax_axis_); ++c) {
+    for (int i = 0; i < outer_num_; ++i) {//输出数量，即label数量，这里主要计算每个label对应的loss值
+      for (int j = 0; j < inner_num_; ++j) {//输入数量，即输入数据的数量
+        const int label_value = static_cast<int>(label[i * inner_num_ + j]);//获取标签的分类数据值
+        if (has_ignore_label_ && label_value == ignore_label_) {//检查是否是属于应该忽略的标签
+          for (int c = 0; c < bottom[0]->shape(softmax_axis_); ++c) {//是则循环设置其diff为0
             bottom_diff[i * dim + c * inner_num_ + j] = 0;
           }
         } else {
-          bottom_diff[i * dim + label_value * inner_num_ + j] -= 1;
-          ++count;
+          bottom_diff[i * dim + label_value * inner_num_ + j] -= 1;//重新设置diff
+          ++count;//统计数量
         }
       }
     }
     // Scale gradient
     Dtype loss_weight = top[0]->cpu_diff()[0] /
-                        get_normalizer(normalization_, count);
-    caffe_scal(prob_.count(), loss_weight, bottom_diff);
-  }
+                        get_normalizer(normalization_, count);//计算权重
+    caffe_scal(prob_.count(), loss_weight, bottom_diff);//将bottom中的diff和loss_weight相乘
 }
 
 #ifdef CPU_ONLY

@@ -94,7 +94,7 @@ class BaseConvolutionLayer : public Layer<Dtype> {
   bool force_nd_im2col_;
 
  private:
-  // wrap im2col/col2im so we don't have to remember the (long) argument lists
+  // wrap im2col/col2im so we don't have to remember the (long) argument lists 直接进行im2col运算
   inline void conv_im2col_cpu(const Dtype* data, Dtype* col_buff) {
     if (!force_nd_im2col_ && num_spatial_axes_ == 2) {
       im2col_cpu(data, conv_in_channels_,

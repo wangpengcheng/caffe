@@ -84,7 +84,7 @@ void Solver<Dtype>::InitTrainNet() {
   CHECK_LE(num_train_nets, 1) << "SolverParameter must not contain more than "
       << "one of these fields specifying a train_net: " << field_names;
   NetParameter net_param;
-  if (param_.has_train_net_param()) {
+  if (param_.has_train_net_param()) {//检查是否存在已有的网络参数
     LOG_IF(INFO, Caffe::root_solver())
         << "Creating training net specified in train_net_param.";
     net_param.CopyFrom(param_.train_net_param());//拷贝网络参数
@@ -220,15 +220,15 @@ void Solver<Dtype>::Step(int iters) {
         break;
       }
     }
-
+    //启用回调，nvcc多卡训练使用
     for (int i = 0; i < callbacks_.size(); ++i) {
       callbacks_[i]->on_start();
     }
-    const bool display = param_.display() && iter_ % param_.display() == 0;
-    net_->set_debug_info(display && param_.debug_info());
+    const bool display = param_.display() && iter_ % param_.display() == 0;//是否显示结果
+    net_->set_debug_info(display && param_.debug_info());//设置是否输出
     // accumulate the loss and gradient
     Dtype loss = 0;
-    for (int i = 0; i < param_.iter_size(); ++i) {
+    for (int i = 0; i < param_.iter_size(); ++i) {//循环遍历迭代
       loss += net_->ForwardBackward();
     }
     loss /= param_.iter_size();
@@ -353,7 +353,7 @@ void Solver<Dtype>::Test(const int test_net_id) {
   vector<int> test_score_output_id;//测试id
   const shared_ptr<Net<Dtype> >& test_net = test_nets_[test_net_id];//测试网络
   Dtype loss = 0;
-  for (int i = 0; i < param_.test_iter(test_net_id); ++i) {
+  for (int i = 0; i < param_.test_iter(test_net_id); ++i) {//循环迭代，直到test_iter次，每次测试数据是总数据量/test_iter
     SolverAction::Enum request = GetRequestedAction();
     // Check to see if stoppage of testing/training has been requested.
     while (request != SolverAction::NONE) {//查看是否测试中或者停止
@@ -365,14 +365,14 @@ void Solver<Dtype>::Test(const int test_net_id) {
         request = GetRequestedAction();
     }
     if (requested_early_exit_) {
-      // break out of test loop.
+      // break out of test loop
       break;
     }
 
     Dtype iter_loss;
     const vector<Blob<Dtype>*>& result =
         test_net->Forward(&iter_loss);//进行网络的前向计算
-    if (param_.test_compute_loss()) {//是否计算test过程中的loss
+    if (param_.test_compute_loss()) {//是否计算test过程中的loss，一般默认为否
       loss += iter_loss;
     }
     if (i == 0) {//如果是第一次迭代，需要存储一下测试结果
@@ -384,7 +384,7 @@ void Solver<Dtype>::Test(const int test_net_id) {
         }
       }
     } else {//否则直接向下
-      int idx = 0;
+      int idx = 0;//设置idx
       for (int j = 0; j < result.size(); ++j) {
         const Dtype* result_vec = result[j]->cpu_data();
         for (int k = 0; k < result[j]->count(); ++k) {
@@ -392,28 +392,28 @@ void Solver<Dtype>::Test(const int test_net_id) {
         }
       }
     }
-  }
+  }//向前迭代完成
   if (requested_early_exit_) {
     LOG(INFO)     << "Test interrupted.";
     return;
   }
-  if (param_.test_compute_loss()) {
+  if (param_.test_compute_loss()) {//是否计算test中的loss值
     loss /= param_.test_iter(test_net_id);
     LOG(INFO) << "Test loss: " << loss;
   }
-  for (int i = 0; i < test_score.size(); ++i) {
+  for (int i = 0; i < test_score.size(); ++i) {//根据输出blob的大小，输出对应的信息
     const int output_blob_index =
         test_net->output_blob_indices()[test_score_output_id[i]];
-    const string& output_name = test_net->blob_names()[output_blob_index];
-    const Dtype loss_weight = test_net->blob_loss_weights()[output_blob_index];
-    ostringstream loss_msg_stream;
-    const Dtype mean_score = test_score[i] / param_.test_iter(test_net_id);
-    if (loss_weight) {
+    const string& output_name = test_net->blob_names()[output_blob_index];//out put blob name
+    const Dtype loss_weight = test_net->blob_loss_weights()[output_blob_index];//loss权重
+    ostringstream loss_msg_stream;//输出的stream定义
+    const Dtype mean_score = test_score[i] / param_.test_iter(test_net_id);//最终的平均分数accuracy
+    if (loss_weight) {//存在loss wight输出对应信息
       loss_msg_stream << " (* " << loss_weight
-                      << " = " << loss_weight * mean_score << " loss)";
+                      << " = " << loss_weight * mean_score << " loss)";//输出最终的loss值。loss*loss_weight
     }
     LOG(INFO) << "    Test net output #" << i << ": " << output_name << " = "
-              << mean_score << loss_msg_stream.str();
+              << mean_score << loss_msg_stream.str();//输出对应的信息
   }
 }
 

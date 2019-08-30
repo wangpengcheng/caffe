@@ -260,11 +260,11 @@ void BaseConvolutionLayer<Dtype>::forward_cpu_gemm(const Dtype* input,
   const Dtype* col_buff = input;
   if (!is_1x1_) {//是否1x1卷积
     if (!skip_im2col) {//是否跳过卷积
-      conv_im2col_cpu(input, col_buffer_.mutable_cpu_data());//进行im2col卷积运算
+      conv_im2col_cpu(input, col_buffer_.mutable_cpu_data());//将数据转化为一维向量
     }
     col_buff = col_buffer_.cpu_data();//获取运算结果
   }
-  for (int g = 0; g < group_; ++g) {//这里是计算卷积后结果的权重最后结果
+  for (int g = 0; g < group_; ++g) {//这里是计算乘法，卷积结果就是col_buff*weights
     caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, conv_out_channels_ /
         group_, conv_out_spatial_dim_, kernel_dim_,
         (Dtype)1., weights + weight_offset_ * g, col_buff + col_offset_ * g,

@@ -28,12 +28,12 @@ void ConvolutionLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
   for (int i = 0; i < bottom.size(); ++i) {//遍历进行卷积计算
     const Dtype* bottom_data = bottom[i]->cpu_data();//获取cpu数据指针
     Dtype* top_data = top[i]->mutable_cpu_data();//获取top的多数据指针
-    for (int n = 0; n < this->num_; ++n) {
+    for (int n = 0; n < this->num_; ++n) {//对输入的100个进行卷积
       this->forward_cpu_gemm(bottom_data + n * this->bottom_dim_, weight,
           top_data + n * this->top_dim_);//进行输入和权重的乘积
       if (this->bias_term_) {
         const Dtype* bias = this->blobs_[1]->cpu_data();
-        this->forward_cpu_bias(top_data + n * this->top_dim_, bias);
+        this->forward_cpu_bias(top_data + n * this->top_dim_, bias);//偏置计算
       }
     }
   }

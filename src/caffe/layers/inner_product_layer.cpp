@@ -95,35 +95,35 @@ void InnerProductLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
         this->blobs_[1]->cpu_data(), (Dtype)1., top_data);
   }
 }
-
+//反向推导函数：参考连接：https://blog.csdn.net/mounty_fsc/article/details/51379395
 template <typename Dtype>
 void InnerProductLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
     const vector<bool>& propagate_down,
     const vector<Blob<Dtype>*>& bottom) {
   if (this->param_propagate_down_[0]) {
-    const Dtype* top_diff = top[0]->cpu_diff();
-    const Dtype* bottom_data = bottom[0]->cpu_data();
-    // Gradient with respect to weight
+    const Dtype* top_diff = top[0]->cpu_diff();//获取diff,一般是上一层的计算结果
+    const Dtype* bottom_data = bottom[0]->cpu_data();//下一层的diff一般为0
+    // Gradient with respect to weight 计算权重的梯度
     if (transpose_) {
       caffe_cpu_gemm<Dtype>(CblasTrans, CblasNoTrans,
           K_, N_, M_,
           (Dtype)1., bottom_data, top_diff,
           (Dtype)1., this->blobs_[0]->mutable_cpu_diff());
-    } else {
+    } else {//这里计算偏导：blobs_diff=top_diff*bottom_data
       caffe_cpu_gemm<Dtype>(CblasTrans, CblasNoTrans,
           N_, K_, M_,
           (Dtype)1., top_diff, bottom_data,
-          (Dtype)1., this->blobs_[0]->mutable_cpu_diff());
+          (Dtype)1., this->blobs_[0]->mutable_cpu_diff());//注意，此处(Dtype)1., this->blobs_[0]->mutable_gpu_diff()中的(Dtype)1.：使得在一个solver的iteration中的多个iter_size的梯度没有清零，而得以累加
     }
   }
-  if (bias_term_ && this->param_propagate_down_[1]) {
+  if (bias_term_ && this->param_propagate_down_[1]) {// 对偏置求偏导blobs_diff=top_diff*bias
     const Dtype* top_diff = top[0]->cpu_diff();
     // Gradient with respect to bias
     caffe_cpu_gemv<Dtype>(CblasTrans, M_, N_, (Dtype)1., top_diff,
         bias_multiplier_.cpu_data(), (Dtype)1.,
         this->blobs_[1]->mutable_cpu_diff());
   }
-  if (propagate_down[0]) {
+  if (propagate_down[0]) { //对上一层输出求偏导bottom_diff=top_diff*blobs_data
     const Dtype* top_diff = top[0]->cpu_diff();
     // Gradient with respect to bottom data
     if (transpose_) {

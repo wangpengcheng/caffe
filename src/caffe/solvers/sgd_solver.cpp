@@ -24,7 +24,7 @@ namespace caffe {
 // where base_lr, max_iter, gamma, step, stepvalue and power are defined
 // in the solver parameter protocol buffer, and iter is the current iteration.
 template <typename Dtype>
-Dtype SGDSolver<Dtype>::GetLearningRate() {
+Dtype SGDSolver<Dtype>::GetLearningRate() {//计算学习率函数
   Dtype rate;
   const string& lr_policy = this->param_.lr_policy();
   if (lr_policy == "fixed") {
@@ -107,7 +107,7 @@ void SGDSolver<Dtype>::ClipGradients() {
 
 template <typename Dtype>
 void SGDSolver<Dtype>::ApplyUpdate() {
-  Dtype rate = GetLearningRate();
+  Dtype rate = GetLearningRate();//获取学习率
   if (this->param_.display() && this->iter_ % this->param_.display() == 0) {
     LOG_IF(INFO, Caffe::root_solver()) << "Iteration " << this->iter_
         << ", lr = " << rate;

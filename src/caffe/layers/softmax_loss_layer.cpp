@@ -54,7 +54,7 @@ void SoftmaxWithLossLayer<Dtype>::Reshape(
     top[1]->ReshapeLike(*bottom[0]);
   }
 }
-//将值标准化
+//将值标准化，主要是将获得的值压缩标准化
 template <typename Dtype>
 Dtype SoftmaxWithLossLayer<Dtype>::get_normalizer(
     LossParameter_NormalizationMode normalization_mode, int valid_count) {
@@ -84,7 +84,7 @@ Dtype SoftmaxWithLossLayer<Dtype>::get_normalizer(
   // particular loss in a multi-task setup. The max prevents NaNs in that case.
   return std::max(Dtype(1.0), normalizer);//查找最大值
 }
-
+//相关参考连接：https://blog.csdn.net/mounty_fsc/article/details/51379395
 template <typename Dtype>
 void SoftmaxWithLossLayer<Dtype>::Forward_cpu(
     const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top) {
@@ -117,15 +117,15 @@ void SoftmaxWithLossLayer<Dtype>::Forward_cpu(
 template <typename Dtype>
 void SoftmaxWithLossLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
     const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {
-  if (propagate_down[1]) {
+  if (propagate_down[1]) {//检查输入是否正常
     LOG(FATAL) << this->type()
                << " Layer cannot backpropagate to label inputs.";
   }
   if (propagate_down[0]) {
-    Dtype* bottom_diff = bottom[0]->mutable_cpu_diff();//获取bottom diff指针
-    const Dtype* prob_data = prob_.cpu_data();//获取预测的概率数据
-    caffe_copy(prob_.count(), prob_data, bottom_diff);
-    const Dtype* label = bottom[1]->cpu_data();
+    Dtype* bottom_diff = bottom[0]->mutable_cpu_diff();//获取bottom diff指针，最开始都是初始化为0的
+    const Dtype* prob_data = prob_.cpu_data();//获取预测的概率数据，是之间前向计算中得出的
+    caffe_copy(prob_.count(), prob_data, bottom_diff);//将预测数据拷贝到bottom_diff中
+    const Dtype* label = bottom[1]->cpu_data();//获取label编号数组
     int dim = prob_.count() / outer_num_;//输出维度
     int count = 0;
     for (int i = 0; i < outer_num_; ++i) {//输出数量，即label数量，这里主要计算每个label对应的loss值
@@ -136,15 +136,15 @@ void SoftmaxWithLossLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
             bottom_diff[i * dim + c * inner_num_ + j] = 0;
           }
         } else {
-          bottom_diff[i * dim + label_value * inner_num_ + j] -= 1;//重新设置diff
-          ++count;//统计数量
+          bottom_diff[i * dim + label_value * inner_num_ + j] -= 1;//重新设置diff梯度，这里主要和SoftmaxWithLoss的loss反向梯度计算有关：
+          ++count;//统计数量，一般是类的数量
         }
       }
     }
-    // Scale gradient
+    // Scale gradient // 注意为loss的权值，对该权值（一般为1或者0）归一化（除以64）
     Dtype loss_weight = top[0]->cpu_diff()[0] /
-                        get_normalizer(normalization_, count);//计算权重
-    caffe_scal(prob_.count(), loss_weight, bottom_diff);//将bottom中的diff和loss_weight相乘
+                        get_normalizer(normalization_, count);//计算loss权重
+    caffe_scal(prob_.count(), loss_weight, bottom_diff);//将bottom中的diff和loss_weight相乘，计算
 }
 
 #ifdef CPU_ONLY

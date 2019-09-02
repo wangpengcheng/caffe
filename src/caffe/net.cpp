@@ -552,21 +552,21 @@ void Net<Dtype>::AppendParam(const NetParameter& param,
     }
   }
 }
-//网络前向计算
+//网络前向计算，注意每次前向计算loss值都会重设为0
 template <typename Dtype>
 Dtype Net<Dtype>::ForwardFromTo(int start, int end) {
   CHECK_GE(start, 0);//确认start>0
   CHECK_LT(end, layers_.size());//确认end<layer.size()
   Dtype loss = 0;//设置loss值为0，前向计算过程中loss重制为0，每次前向计算都需要重新设置loss值
   for (int i = start; i <= end; ++i) {
-    for (int c = 0; c < before_forward_.size(); ++c) {//计算before_forward_主要是NCCL中进行计算，
+    for (int c = 0; c < before_forward_.size(); ++c) {//计算before_forward_主要是NCCL中进行计算，单卡时一般跳过
       before_forward_[c]->run(i);
     }
     Dtype layer_loss = layers_[i]->Forward(bottom_vecs_[i], top_vecs_[i]);//获取这个层的loss值，
-    loss += layer_loss;
+    loss += layer_loss;//lenet中只有最后一层才计算loss值
     //debug输出前向信息
     if (debug_info_) { ForwardDebugInfo(i); }
-    for (int c = 0; c < after_forward_.size(); ++c) {
+    for (int c = 0; c < after_forward_.size(); ++c) {//NVCC相关计算函数，一般不启动
       after_forward_[c]->run(i);
     }
   }
@@ -604,16 +604,16 @@ const vector<Blob<Dtype>*>& Net<Dtype>::Forward(
   }
   return Forward(loss);//返回前向计算的loss
 }
-//反向迭代器计算
+//反向迭代器计算，一般是从最后一层到前一层
 template <typename Dtype>
 void Net<Dtype>::BackwardFromTo(int start, int end) {
   CHECK_GE(end, 0);
   CHECK_LT(start, layers_.size());
   for (int i = start; i >= end; --i) {
-    for (int c = 0; c < before_backward_.size(); ++c) {
+    for (int c = 0; c < before_backward_.size(); ++c) {//nvcc计算函数，一般跳过
       before_backward_[c]->run(i);
     }
-    if (layer_need_backward_[i]) {//layer是否需要反向计算，在lenet中出了，data都需要
+    if (layer_need_backward_[i]) {//layer是否需要反向计算，在lenet中除了data都需要
       layers_[i]->Backward(
           top_vecs_[i], bottom_need_backward_[i], bottom_vecs_[i]);//进行反向迭代计算
       if (debug_info_) { BackwardDebugInfo(i); }
@@ -665,7 +665,7 @@ void Net<Dtype>::BackwardDebugInfo(const int layer_id) {
         << " diff: " << diff_abs_val_mean;
   }
   for (int param_id = 0; param_id < layers_[layer_id]->blobs().size();
-       ++param_id) {//输出layer中的其它数据信息
+       ++param_id) {//输出layer中的其它数据信息，比如卷积核大小等
     if (!layers_[layer_id]->param_propagate_down(param_id)) { continue; }
     const Blob<Dtype>& blob = *layers_[layer_id]->blobs()[param_id];
     const Dtype diff_abs_val_mean = blob.asum_diff() / blob.count();

@@ -112,7 +112,7 @@ void Solver<Dtype>::InitTrainNet() {
   net_state.MergeFrom(net_param.state());
   net_state.MergeFrom(param_.train_state());
   std::cout<<param_.DebugString()<<std::endl;
-  net_param.mutable_state()->CopyFrom(net_state);
+  net_param.mutable_state()->CopyFrom(net_state);//拷贝网络状态
   net_.reset(new Net<Dtype>(net_param));//重新设置网络参数
   for (int w_idx = 0; w_idx < param_.weights_size(); ++w_idx) {//当存在权重时加载权重
     LoadNetWeights(net_, param_.weights(w_idx));
@@ -202,7 +202,7 @@ template <typename Dtype>
 void Solver<Dtype>::Step(int iters) {
   const int start_iter = iter_;//开始迭代index
   const int stop_iter = iter_ + iters;//终止迭代index
-  int average_loss = this->param_.average_loss();//平均loss值
+  int average_loss = this->param_.average_loss();//平均loss值,一般默认为1
   losses_.clear();//清除loss
   smoothed_loss_ = 0;
   iteration_timer_.Start();//开启cpu计时器
@@ -213,36 +213,36 @@ void Solver<Dtype>::Step(int iters) {
     if (param_.test_interval() && iter_ % param_.test_interval() == 0
         && (iter_ > 0 || param_.test_initialization())) {//判断条件开始测试
       if (Caffe::root_solver()) {
-        TestAll();//进行所有测试
+        TestAll();//进行所有测试，注意测试的loss一般不进行统计
       }
       if (requested_early_exit_) {
         // Break out of the while loop because stop was requested while testing.
         break;
       }
     }
-    //启用回调，nvcc多卡训练使用
+    //启用回调，nvcc多卡训练使用，一般跳过
     for (int i = 0; i < callbacks_.size(); ++i) {
       callbacks_[i]->on_start();
     }
     const bool display = param_.display() && iter_ % param_.display() == 0;//是否显示结果
     net_->set_debug_info(display && param_.debug_info());//设置是否输出
     // accumulate the loss and gradient
-    Dtype loss = 0;
-    for (int i = 0; i < param_.iter_size(); ++i) {//循环遍历迭代
-      loss += net_->ForwardBackward();
+    Dtype loss = 0;//重新初始化loss
+    for (int i = 0; i < param_.iter_size(); ++i) {//循环遍历反向前向迭代和反向迭代
+      loss += net_->ForwardBackward();//计算前向和后向loss
     }
-    loss /= param_.iter_size();
-    // average the loss across iterations for smoothed reporting
+    loss /= param_.iter_size();//计算步长的平均loss
+    // average the loss across iterations for smoothed reporting 为了输出结果平滑，将临近的average_loss个loss数值进行平均，存储在成员变量smoothed_loss_中
     UpdateSmoothedLoss(loss, start_iter, average_loss);
-    if (display) {
-      float lapse = iteration_timer_.Seconds();
-      float per_s = (iter_ - iterations_last_) / (lapse ? lapse : 1);
+    if (display) {//显示对应的信息
+      float lapse = iteration_timer_.Seconds();//统计花费的总时间
+      float per_s = (iter_ - iterations_last_) / (lapse ? lapse : 1);//平均每秒的步数
       LOG_IF(INFO, Caffe::root_solver()) << "Iteration " << iter_
           << " (" << per_s << " iter/s, " << lapse << "s/"
-          << param_.display() << " iters), loss = " << smoothed_loss_;
-      iteration_timer_.Start();
+          << param_.display() << " iters), loss = " << smoothed_loss_;//显示平均loss
+      iteration_timer_.Start();//开始统计时间
       iterations_last_ = iter_;
-      const vector<Blob<Dtype>*>& result = net_->output_blobs();
+      const vector<Blob<Dtype>*>& result = net_->output_blobs();//网络的最终输出loss
       int score_index = 0;
       for (int j = 0; j < result.size(); ++j) {
         const Dtype* result_vec = result[j]->cpu_data();
@@ -491,14 +491,14 @@ void Solver<Dtype>::Restore(const char* state_file) {
 template <typename Dtype>
 void Solver<Dtype>::UpdateSmoothedLoss(Dtype loss, int start_iter,
     int average_loss) {
-  if (losses_.size() < average_loss) {
-    losses_.push_back(loss);
+  if (losses_.size() < average_loss) {//判断是否小于平均值的loss
+    losses_.push_back(loss);//添加loss
     int size = losses_.size();
     smoothed_loss_ = (smoothed_loss_ * (size - 1) + loss) / size;
-  } else {
-    int idx = (iter_ - start_iter) % average_loss;
-    smoothed_loss_ += (loss - losses_[idx]) / average_loss;
-    losses_[idx] = loss;
+  } else {//
+    int idx = (iter_ - start_iter) % average_loss;//计算当前相对的索引
+    smoothed_loss_ += (loss - losses_[idx]) / average_loss;//更新对应的smoothed_loss_值
+    losses_[idx] = loss;//更新loss
   }
 }
 

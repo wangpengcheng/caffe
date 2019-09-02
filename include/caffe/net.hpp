@@ -85,8 +85,8 @@ class Net {
 //反向计算函数
   Dtype ForwardBackward() {
     Dtype loss;
-    Forward(&loss);//前向计算
-    Backward();//反向计算
+    Forward(&loss);//前向计算,获取loss值
+    Backward();//反向计算，根据loss值更新权重
     return loss;
   }
 

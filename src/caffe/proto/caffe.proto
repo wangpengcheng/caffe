@@ -145,10 +145,10 @@ message SolverParameter {
   //////////////////////////////////////////////////////////////////////////////
 
   // Proto filename for the train net, possibly combined with one or more
-  // test nets.
+  // test nets. //测试net名称
   optional string net = 24;
   // Inline train net param, possibly combined with one or more test nets.
-  optional NetParameter net_param = 25;
+  optional NetParameter net_param = 25;//net 参数
 
   optional string train_net = 1; // Proto filename for the train net.
   repeated string test_net = 2; // Proto filenames for the test nets.
@@ -165,23 +165,24 @@ message SolverParameter {
   repeated NetState test_state = 27;
 
   // The number of iterations for each test net.
-  repeated int32 test_iter = 3;
+  repeated int32 test_iter = 3;//test的迭代器数目
 
   // The number of iterations between two testing phases.
-  optional int32 test_interval = 4 [default = 0];
-  optional bool test_compute_loss = 19 [default = false];
+  optional int32 test_interval = 4 [default = 0];//测试的间隔默认为0
+  optional bool test_compute_loss = 19 [default = false];//test 是否计算loss
   // If true, run an initial test pass before the first iteration,
   // ensuring memory availability and printing the starting value of the loss.
+  // 如果为true，则在第一次迭代之前运行初始测试过程，确保内存可用性并打印丢失的起始值。
   optional bool test_initialization = 32 [default = true];
-  optional float base_lr = 5; // The base learning rate
+  optional float base_lr = 5; // The base learning rate//基础学习率
   // the number of iterations between displaying info. If display = 0, no info
   // will be displayed.
-  optional int32 display = 6;
+  optional int32 display = 6;//每隔多少显示一次信息
   // Display the loss averaged over the last average_loss iterations
-  optional int32 average_loss = 33 [default = 1];
-  optional int32 max_iter = 7; // the maximum number of iterations
+  optional int32 average_loss = 33 [default = 1];//每隔多久显示一次loss
+  optional int32 max_iter = 7; // the maximum number of iterations//最大迭代器数量
   // accumulate gradients over `iter_size` x `batch_size` instances
-  optional int32 iter_size = 36 [default = 1];
+  optional int32 iter_size = 36 [default = 1];//迭代器尺寸
 
   // The learning rate decay policy. The currently implemented learning rate
   // policies are as follows:
@@ -198,13 +199,27 @@ message SolverParameter {
   //
   // where base_lr, max_iter, gamma, step, stepvalue and power are defined
   // in the solver parameter protocol buffer, and iter is the current iteration.
+/*
+
+lr_policy可以设置为下面这些值，相应的学习率的计算为：
+
+- fixed:　　 保持base_lr不变.
+- step: 　　 如果设置为step,则还需要设置一个stepsize,  返回 base_lr * gamma ^ (floor(iter / stepsize)),其中iter表示当前的迭代次数
+- exp:   　　返回base_lr * gamma ^ iter， iter为当前迭代次数
+- inv:　　    如果设置为inv,还需要设置一个power, 返回base_lr * (1 + gamma * iter) ^ (- power)
+- multistep: 如果设置为multistep,则还需要设置一个stepvalue。这个参数和step很相似，step是均匀等间隔变化，而multistep则是根据stepvalue值变化
+- poly: 　　  学习率进行多项式误差, 返回 base_lr (1 - iter/max_iter) ^ (power)
+- sigmoid:　学习率进行sigmod衰减，返回 base_lr ( 1/(1 + exp(-gamma * (iter - stepsize))
+*/
+
   optional string lr_policy = 8;
   optional float gamma = 9; // The parameter to compute the learning rate.
   optional float power = 10; // The parameter to compute the learning rate.
   optional float momentum = 11; // The momentum value.
-  optional float weight_decay = 12; // The weight decay.
+  optional float weight_decay = 12; // The weight decay.权重衰减
   // regularization types supported: L1 and L2
   // controlled by weight_decay
+  //支持的正则化类型：L1和L2由weight_decay控制
   optional string regularization_type = 29 [default = "L2"];
   // the stepsize for learning rate policy "step"
   optional int32 stepsize = 13;
@@ -274,6 +289,7 @@ message SolverParameter {
   optional SolverType solver_type = 30 [default = SGD];//默认的方式是SGD
 
   // Overlap compute and communication for data parallel training
+  //重叠数据并行训练的计算和通信
   optional bool layer_wise_reduce = 41 [default = true];
 
   // Path to caffemodel file(s) with pretrained weights to initialize finetuning.
@@ -299,7 +315,7 @@ enum Phase {
    TRAIN = 0;
    TEST = 1;
 }
-
+//快照的规则
 message NetState {
   optional Phase phase = 1 [default = TEST];
   optional int32 level = 2 [default = 0];

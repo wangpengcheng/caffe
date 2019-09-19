@@ -111,15 +111,15 @@ void BasePrefetchingDataLayer<Dtype>::InternalThreadEntry() {
 
 template <typename Dtype>
 void BasePrefetchingDataLayer<Dtype>::Forward_cpu(
-    const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top) {
+    const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top) {//基础datalayer层的前向计算
   if (prefetch_current_) {
     prefetch_free_.push(prefetch_current_);
   }
   prefetch_current_ = prefetch_full_.pop("Waiting for data");
-  // Reshape to loaded data.
+  // Reshape to loaded data.//重设大小去加载数据
   top[0]->ReshapeLike(prefetch_current_->data_);
-  top[0]->set_cpu_data(prefetch_current_->data_.mutable_cpu_data());
-  if (this->output_labels_) {
+  top[0]->set_cpu_data(prefetch_current_->data_.mutable_cpu_data());//获取cpu数据纸盒子呢
+  if (this->output_labels_) {//如果存在label标签
     // Reshape to loaded labels.
     top[1]->ReshapeLike(prefetch_current_->label_);
     top[1]->set_cpu_data(prefetch_current_->label_.mutable_cpu_data());

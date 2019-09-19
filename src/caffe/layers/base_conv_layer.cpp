@@ -175,12 +175,12 @@ void BaseConvolutionLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
       bias_filler->Fill(this->blobs_[1].get());
     }
   }
-  kernel_dim_ = this->blobs_[0]->count(1);
+  kernel_dim_ = this->blobs_[0]->count(1);//获取卷积核的展开大小，主要是为了im2col的快速卷积
   weight_offset_ = conv_out_channels_ * kernel_dim_ / group_;
   // Propagate gradients to the parameters (as directed by backward pass).
   this->param_propagate_down_.resize(this->blobs_.size(), true);
 }
-
+//重新设置输入和输出
 template <typename Dtype>
 void BaseConvolutionLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top) {
@@ -199,24 +199,24 @@ void BaseConvolutionLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
   }
   // Shape the tops.
   bottom_shape_ = &bottom[0]->shape();
-  compute_output_shape();
+  compute_output_shape();//计算输出的形状
   vector<int> top_shape(bottom[0]->shape().begin(),
-      bottom[0]->shape().begin() + channel_axis_);
+      bottom[0]->shape().begin() + channel_axis_);//创建top shape记录器，一般是输出数据的维度=输入*卷积核数量
   top_shape.push_back(num_output_);
-  for (int i = 0; i < num_spatial_axes_; ++i) {
+  for (int i = 0; i < num_spatial_axes_; ++i) {//将剩下的宽和高添加上去
     top_shape.push_back(output_shape_[i]);
   }
   for (int top_id = 0; top_id < top.size(); ++top_id) {
-    top[top_id]->Reshape(top_shape);
+    top[top_id]->Reshape(top_shape);//重新调整输出的blob维度，主要是内存分配管理
   }
-  if (reverse_dimensions()) {
+  if (reverse_dimensions()) {//是否反卷积
     conv_out_spatial_dim_ = bottom[0]->count(first_spatial_axis);
   } else {
     conv_out_spatial_dim_ = top[0]->count(first_spatial_axis);
   }
-  col_offset_ = kernel_dim_ * conv_out_spatial_dim_;
-  output_offset_ = conv_out_channels_ * conv_out_spatial_dim_ / group_;
-  // Setup input dimensions (conv_input_shape_).
+  col_offset_ = kernel_dim_ * conv_out_spatial_dim_;//计算数据的列内存偏移,
+  output_offset_ = conv_out_channels_ * conv_out_spatial_dim_ / group_;//计算输出偏移
+  // Setup input dimensions (conv_input_shape_).//设置输入尺寸
   vector<int> bottom_dim_blob_shape(1, num_spatial_axes_ + 1);
   conv_input_shape_.Reshape(bottom_dim_blob_shape);
   int* conv_input_shape_data = conv_input_shape_.mutable_cpu_data();
@@ -230,7 +230,7 @@ void BaseConvolutionLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
   // The im2col result buffer will only hold one image at a time to avoid
   // overly large memory usage. In the special case of 1x1 convolution
   // it goes lazily unused to save memory.
-  col_buffer_shape_.clear();
+  col_buffer_shape_.clear();//清除卷积buffer
   col_buffer_shape_.push_back(kernel_dim_ * group_);
   for (int i = 0; i < num_spatial_axes_; ++i) {
     if (reverse_dimensions()) {
@@ -239,32 +239,32 @@ void BaseConvolutionLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
       col_buffer_shape_.push_back(output_shape_[i]);
     }
   }
-  col_buffer_.Reshape(col_buffer_shape_);
-  bottom_dim_ = bottom[0]->count(channel_axis_);
+  col_buffer_.Reshape(col_buffer_shape_);//列缓存向量
+  bottom_dim_ = bottom[0]->count(channel_axis_);//输入的底部大小
   top_dim_ = top[0]->count(channel_axis_);
-  num_kernels_im2col_ = conv_in_channels_ * conv_out_spatial_dim_;
-  num_kernels_col2im_ = reverse_dimensions() ? top_dim_ : bottom_dim_;
-  // Set up the all ones "bias multiplier" for adding biases by BLAS
+  num_kernels_im2col_ = conv_in_channels_ * conv_out_spatial_dim_;//需要的im2col数量
+  num_kernels_col2im_ = reverse_dimensions() ? top_dim_ : bottom_dim_;//col2im维度数量
+  // Set up the all ones "bias multiplier" for adding biases by BLAS 设置所有“偏差乘数”以增加BLAS的偏差
   out_spatial_dim_ = top[0]->count(first_spatial_axis);
   if (bias_term_) {
-    vector<int> bias_multiplier_shape(1, out_spatial_dim_);
+    vector<int> bias_multiplier_shape(1, out_spatial_dim_);//偏差的数组
     bias_multiplier_.Reshape(bias_multiplier_shape);
     caffe_set(bias_multiplier_.count(), Dtype(1),
-        bias_multiplier_.mutable_cpu_data());
+        bias_multiplier_.mutable_cpu_data());//为偏差分配内存
   }
 }
-
+//前向的矩阵乘法运算
 template <typename Dtype>
 void BaseConvolutionLayer<Dtype>::forward_cpu_gemm(const Dtype* input,
     const Dtype* weights, Dtype* output, bool skip_im2col) {
   const Dtype* col_buff = input;
-  if (!is_1x1_) {
-    if (!skip_im2col) {
-      conv_im2col_cpu(input, col_buffer_.mutable_cpu_data());
+  if (!is_1x1_) {//是否1x1卷积
+    if (!skip_im2col) {//是否跳过卷积
+      conv_im2col_cpu(input, col_buffer_.mutable_cpu_data());//将数据转化为一维向量
     }
-    col_buff = col_buffer_.cpu_data();
+    col_buff = col_buffer_.cpu_data();//获取运算结果
   }
-  for (int g = 0; g < group_; ++g) {
+  for (int g = 0; g < group_; ++g) {//这里是计算乘法，卷积结果就是col_buff*weights
     caffe_cpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, conv_out_channels_ /
         group_, conv_out_spatial_dim_, kernel_dim_,
         (Dtype)1., weights + weight_offset_ * g, col_buff + col_offset_ * g,

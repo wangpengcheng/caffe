@@ -54,7 +54,7 @@ void im2col_cpu(
     //计算通道大小，为了方便将几个通道上面的数据，放在一起进行操作，相当于将三维压缩到一维
     const int channel_size = height * width;
   //根据维度来遍历图像
-  for (int channel = channels; channel--; data_im += channel_size) {
+  for (int channel = channels; channel--; data_im += channel_size) {//这里的channel一般是rgb通道数目
     //根据卷积核的大小来进行遍历卷积，对卷积核上面的每一个数据点计算对应图像数据的积
     for (int kernel_row = 0; kernel_row < kernel_h; kernel_row++) {//按行遍历
       for (int kernel_col = 0; kernel_col < kernel_w; kernel_col++) {//按列遍历
@@ -66,7 +66,7 @@ void im2col_cpu(
           if (!is_a_ge_zero_and_a_lt_b(input_row, height)) {//如果越界，即没有输入图像没有数据
             //按列读取数据，确定输入的坐标
             for (int output_cols = output_w; output_cols; output_cols--) {
-              //将所有输出全部置0
+              //将所有输出全部置0 相当于预先分配内存
               *(data_col++) = 0;
             }
           } else {//没有越界，存在输入数据，进行卷积运算

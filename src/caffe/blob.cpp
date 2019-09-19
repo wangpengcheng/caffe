@@ -27,7 +27,7 @@ void Blob<Dtype>::Reshape(const vector<int>& shape) {
   CHECK_LE(shape.size(), kMaxBlobAxes);
   count_ = 1;
   shape_.resize(shape.size());
-  if (!shape_data_ || shape_data_->size() < shape.size() * sizeof(int)) {
+  if (!shape_data_ || shape_data_->size() < shape.size() * sizeof(int)) {//小于预分配，重新分配内存
     shape_data_.reset(new SyncedMemory(shape.size() * sizeof(int)));
   }
   //强制转换为整形的指针
@@ -38,7 +38,7 @@ void Blob<Dtype>::Reshape(const vector<int>& shape) {
     if (count_ != 0) {
       CHECK_LE(shape[i], INT_MAX / count_) << "blob size exceeds INT_MAX";
     }
-    count_ *= shape[i];
+    count_ *= shape[i];//拷贝相关数据
     shape_[i] = shape[i];
     shape_data[i] = shape[i];
   }
@@ -223,7 +223,7 @@ Dtype Blob<Dtype>::asum_data() const {
   if (!data_) { return 0; }
   switch (data_->head()) {
   case SyncedMemory::HEAD_AT_CPU:
-    return caffe_cpu_asum(count_, cpu_data());
+    return caffe_cpu_asum(count_, cpu_data());//计算所有数据的和
   case SyncedMemory::HEAD_AT_GPU:
   case SyncedMemory::SYNCED:
 #ifndef CPU_ONLY

@@ -24,7 +24,7 @@ namespace caffe {
 // where base_lr, max_iter, gamma, step, stepvalue and power are defined
 // in the solver parameter protocol buffer, and iter is the current iteration.
 template <typename Dtype>
-Dtype SGDSolver<Dtype>::GetLearningRate() {
+Dtype SGDSolver<Dtype>::GetLearningRate() {//计算学习率函数
   Dtype rate;
   const string& lr_policy = this->param_.lr_policy();
   if (lr_policy == "fixed") {
@@ -70,13 +70,13 @@ Dtype SGDSolver<Dtype>::GetLearningRate() {
 }
 
 template <typename Dtype>
-void SGDSolver<Dtype>::PreSolve() {
+void SGDSolver<Dtype>::PreSolve() {//注意这里要先调用solver的构造函数
   // Initialize the history
   const vector<Blob<Dtype>*>& net_params = this->net_->learnable_params();//获取网络的所有学习参数
-  history_.clear();
+  history_.clear();//清除历史信息
   update_.clear();
   temp_.clear();
-  for (int i = 0; i < net_params.size(); ++i) {
+  for (int i = 0; i < net_params.size(); ++i) {//为暂时存储对象分配内存
     const vector<int>& shape = net_params[i]->shape();
     history_.push_back(shared_ptr<Blob<Dtype> >(new Blob<Dtype>(shape)));
     update_.push_back(shared_ptr<Blob<Dtype> >(new Blob<Dtype>(shape)));
@@ -107,7 +107,7 @@ void SGDSolver<Dtype>::ClipGradients() {
 
 template <typename Dtype>
 void SGDSolver<Dtype>::ApplyUpdate() {
-  Dtype rate = GetLearningRate();
+  Dtype rate = GetLearningRate();//获取学习率
   if (this->param_.display() && this->iter_ % this->param_.display() == 0) {
     LOG_IF(INFO, Caffe::root_solver()) << "Iteration " << this->iter_
         << ", lr = " << rate;

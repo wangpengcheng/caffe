@@ -6,17 +6,17 @@ namespace caffe {
 
 template <typename Dtype>
 void ConvolutionLayer<Dtype>::compute_output_shape() {
-  const int* kernel_shape_data = this->kernel_shape_.cpu_data();
-  const int* stride_data = this->stride_.cpu_data();
-  const int* pad_data = this->pad_.cpu_data();
+  const int* kernel_shape_data = this->kernel_shape_.cpu_data();//获取核的大小
+  const int* stride_data = this->stride_.cpu_data();//卷积步长
+  const int* pad_data = this->pad_.cpu_data();//边缘扩充大小
   const int* dilation_data = this->dilation_.cpu_data();
   this->output_shape_.clear();
-  for (int i = 0; i < this->num_spatial_axes_; ++i) {
+  for (int i = 0; i < this->num_spatial_axes_; ++i) {//输入数据的维度，一般是2
     // i + 1 to skip channel axis
-    const int input_dim = this->input_shape(i + 1);
-    const int kernel_extent = dilation_data[i] * (kernel_shape_data[i] - 1) + 1;
+    const int input_dim = this->input_shape(i + 1);//输入维度
+    const int kernel_extent = dilation_data[i] * (kernel_shape_data[i] - 1) + 1;//卷积缩小的边长
     const int output_dim = (input_dim + 2 * pad_data[i] - kernel_extent)
-        / stride_data[i] + 1;
+        / stride_data[i] + 1;//计算输出的维度
     this->output_shape_.push_back(output_dim);
   }
 }
@@ -24,16 +24,16 @@ void ConvolutionLayer<Dtype>::compute_output_shape() {
 template <typename Dtype>
 void ConvolutionLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top) {
-  const Dtype* weight = this->blobs_[0]->cpu_data();
-  for (int i = 0; i < bottom.size(); ++i) {
-    const Dtype* bottom_data = bottom[i]->cpu_data();
-    Dtype* top_data = top[i]->mutable_cpu_data();
-    for (int n = 0; n < this->num_; ++n) {
+  const Dtype* weight = this->blobs_[0]->cpu_data();//获取权重
+  for (int i = 0; i < bottom.size(); ++i) {//遍历进行卷积计算
+    const Dtype* bottom_data = bottom[i]->cpu_data();//获取cpu数据指针
+    Dtype* top_data = top[i]->mutable_cpu_data();//获取top的多数据指针
+    for (int n = 0; n < this->num_; ++n) {//对输入的100个进行卷积
       this->forward_cpu_gemm(bottom_data + n * this->bottom_dim_, weight,
-          top_data + n * this->top_dim_);
+          top_data + n * this->top_dim_);//进行输入和权重的乘积
       if (this->bias_term_) {
         const Dtype* bias = this->blobs_[1]->cpu_data();
-        this->forward_cpu_bias(top_data + n * this->top_dim_, bias);
+        this->forward_cpu_bias(top_data + n * this->top_dim_, bias);//偏置计算
       }
     }
   }

@@ -5,6 +5,14 @@
 #include <vector>
 
 #include "caffe/solver.hpp"
+/**
+ * 参考链接：
+ * 公式解析：https://blog.csdn.net/crazyquhezheng/article/details/79322388
+ * https://blog.csdn.net/q375010308/article/details/47021779
+ * 代码解析：http://www.voidcn.com/article/p-aqbavnah-bcx.html
+ * http://kaizhao.net/blog/posts/momentum-caffe-pytorch/
+ * https://blog.csdn.net/suixinsuiyuan33/article/details/69229605
+ * /
 
 namespace caffe {
 
@@ -16,7 +24,7 @@ template <typename Dtype>
 class SGDSolver : public Solver<Dtype> {//继承了solver公有类的方法，包括初始构造函数
  public:
   explicit SGDSolver(const SolverParameter& param)
-      : Solver<Dtype>(param) { PreSolve(); }//构造函数
+      : Solver<Dtype>(param) { PreSolve(); }//构造函数,注意这里继承了solver的参数，并添加了PreSolver方法
   explicit SGDSolver(const string& param_file)
       : Solver<Dtype>(param_file) { PreSolve(); }
   virtual inline const char* type() const { return "SGD"; }
@@ -27,12 +35,12 @@ class SGDSolver : public Solver<Dtype> {//继承了solver公有类的方法，�
   Dtype GetLearningRate();
 
  protected:
-  void PreSolve();
-  virtual void Normalize(int param_id);
-  virtual void Regularize(int param_id);
-  virtual void ComputeUpdateValue(int param_id, Dtype rate);
-  virtual void ClipGradients();
-  virtual void SnapshotSolverState(const string& model_filename);
+  void PreSolve();//预处理函数，主要进行参数的获取和内存变量的初始化
+  virtual void Normalize(int param_id);//标准化
+  virtual void Regularize(int param_id);//正则化
+  virtual void ComputeUpdateValue(int param_id, Dtype rate);//根据学习率更新所有的计算
+  virtual void ClipGradients();//梯度修正
+  virtual void SnapshotSolverState(const string& model_filename);//这个是闪照的一系列动作，主要是闪照的存储。
   virtual void SnapshotSolverStateToBinaryProto(const string& model_filename);
   virtual void SnapshotSolverStateToHDF5(const string& model_filename);
   virtual void RestoreSolverStateFromHDF5(const string& state_file);
@@ -44,11 +52,13 @@ class SGDSolver : public Solver<Dtype> {//继承了solver公有类的方法，�
    // update维护更新相关数据，快照中不需要。
    // temp维护计算中可能需要的其他信息
    //渐变/更新，快照中不需要
+  //history维护旧的动量数据。update维护更新的相关数据，而且在snapshots中是不需要的。temp维护其他信息，这些信息可能是在计算梯度或者更新时需要的，而且在snapshots中是不需要的。
   vector<shared_ptr<Blob<Dtype> > > history_, update_, temp_;//
 
-  DISABLE_COPY_AND_ASSIGN(SGDSolver);
+  DISABLE_COPY_AND_ASSIGN(SGDSolver);//禁止类的拷贝
 };
-
+//Nesterov 的加速梯度法（Nesterov’s accelerated gradient）作为凸优化中最理想的方法，其收敛速度非常快。
+//参考链接：https://zhuanlan.zhihu.com/p/22810533；这里相对SGD方法优化的Momentum方法，更进一步进行了迭代优化。
 template <typename Dtype>
 class NesterovSolver : public SGDSolver<Dtype> {
  public:
@@ -63,6 +73,7 @@ class NesterovSolver : public SGDSolver<Dtype> {
 
   DISABLE_COPY_AND_ASSIGN(NesterovSolver);
 };
+//自适应梯度（adaptive gradient）是基于梯度的优化方法
 
 template <typename Dtype>
 class AdaGradSolver : public SGDSolver<Dtype> {
@@ -82,7 +93,7 @@ class AdaGradSolver : public SGDSolver<Dtype> {
 
   DISABLE_COPY_AND_ASSIGN(AdaGradSolver);
 };
-
+//RMSprop是Tieleman在一次 Coursera课程演讲中提出来的，也是一种基于梯度的优化方法
 
 template <typename Dtype>
 class RMSPropSolver : public SGDSolver<Dtype> {
@@ -106,7 +117,7 @@ class RMSPropSolver : public SGDSolver<Dtype> {
 
   DISABLE_COPY_AND_ASSIGN(RMSPropSolver);
 };
-
+//AdaDelta基本思想是用一阶的方法，近似模拟二阶牛顿法。
 template <typename Dtype>
 class AdaDeltaSolver : public SGDSolver<Dtype> {
  public:
@@ -131,6 +142,7 @@ class AdaDeltaSolver : public SGDSolver<Dtype> {
  * [1] D. P. Kingma and J. L. Ba, "ADAM: A Method for Stochastic Optimization."
  *     arXiv preprint arXiv:1412.6980v8 (2014).
  */
+// Adam是一种基于梯度的优化方法
 template <typename Dtype>
 class AdamSolver : public SGDSolver<Dtype> {
  public:

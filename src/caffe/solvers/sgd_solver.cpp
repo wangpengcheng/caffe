@@ -24,11 +24,11 @@ namespace caffe {
 // where base_lr, max_iter, gamma, step, stepvalue and power are defined
 // in the solver parameter protocol buffer, and iter is the current iteration.
 template <typename Dtype>
-Dtype SGDSolver<Dtype>::GetLearningRate() {//计算学习率函数
-  Dtype rate;
+Dtype SGDSolver<Dtype>::GetLearningRate() {//计算学习率函数，注意这里学习率的相关计算函数和公式。根据其中的不同方式来决定最终的学习率的计算
+  Dtype rate;//最终的学习率
   const string& lr_policy = this->param_.lr_policy();
   if (lr_policy == "fixed") {
-    rate = this->param_.base_lr();
+    rate = this->param_.base_lr();//直接返回base_lr
   } else if (lr_policy == "step") {
     CHECK_GT(this->param_.stepsize(), 0);
     this->current_step_ = this->iter_ / this->param_.stepsize();

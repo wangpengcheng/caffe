@@ -145,6 +145,7 @@ void SoftmaxWithLossLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
     Dtype loss_weight = top[0]->cpu_diff()[0] /
                         get_normalizer(normalization_, count);//计算loss权重
     caffe_scal(prob_.count(), loss_weight, bottom_diff);//将bottom中的diff和loss_weight相乘，计算
+  }
 }
 
 #ifdef CPU_ONLY
@@ -153,5 +154,4 @@ STUB_GPU(SoftmaxWithLossLayer);
 
 INSTANTIATE_CLASS(SoftmaxWithLossLayer);
 REGISTER_LAYER_CLASS(SoftmaxWithLoss);
-
 }  // namespace caffe

@@ -41,12 +41,11 @@ private:\
   classname(const classname&);\
   classname& operator=(const classname&)
 //用double和float实例化一个类
-// Instantiate a class with float and double specifications.
-//预定义模板类，方便初始化
+// Instantiate a class with float and double specifications.//预定义模板类，方便初始化
 #define INSTANTIATE_CLASS(classname) \
   char gInstantiationGuard##classname; \
   template class classname<float>; \
-  template class classname<double>
+  template class classname<double>;
 //声明网路向前计算函数
 #define INSTANTIATE_LAYER_GPU_FORWARD(classname) \
   template void classname<float>::Forward_gpu( \

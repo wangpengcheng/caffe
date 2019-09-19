@@ -142,7 +142,7 @@ class LayerRegisterer {
   {                                                                            \
     return shared_ptr<Layer<Dtype> >(new type##Layer<Dtype>(param));           \
   }                                                                            \
-  REGISTER_LAYER_CREATOR(type, Creator_##type##Layer)
+  REGISTER_LAYER_CREATOR(type, Creator_##type##Layer) 
 
 }  // namespace caffe
 //这个文件主要是使用工厂模式，可以自由的选择和添加类
